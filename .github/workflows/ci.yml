@@ -60,3 +60,18 @@ jobs:
         with:
           name: test-results
           path: TestResults/**/*.trx
+
+  docker-images:
+    # Catches a Dockerfile that no longer builds, including the migrations bundle.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build --file src/TaskBoard.Api/Dockerfile --target api .
+
+      - name: Build migrations image
+        run: docker build --file src/TaskBoard.Api/Dockerfile --target migrations .
