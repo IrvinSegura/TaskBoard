@@ -64,6 +64,9 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CardId");
 
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
                     b.HasIndex("UploadedById");
 
                     b.ToTable("Attachments");
@@ -375,6 +378,49 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                     b.ToTable("TeamMembers");
                 });
 
+            modelBuilder.Entity("TaskBoard.Domain.Users.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("TaskBoard.Domain.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -420,6 +466,9 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Error")
                         .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("LockedUntil")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset>("OccurredAt")
                         .HasColumnType("timestamp with time zone");
@@ -556,6 +605,15 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TaskBoard.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Users.RefreshToken", b =>
+                {
                     b.HasOne("TaskBoard.Domain.Users.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")

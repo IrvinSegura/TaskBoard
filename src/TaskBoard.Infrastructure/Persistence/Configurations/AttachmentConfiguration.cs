@@ -19,5 +19,8 @@ internal sealed class AttachmentConfiguration : IEntityTypeConfiguration<Attachm
         builder.HasOne<User>().WithMany().HasForeignKey(a => a.UploadedById).OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(a => a.CardId);
+
+        // Looked up by the orphaned file cleanup.
+        builder.HasIndex(a => a.StorageKey).IsUnique();
     }
 }
