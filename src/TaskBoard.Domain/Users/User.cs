@@ -21,5 +21,8 @@ public sealed class User : AggregateRoot
         PasswordHash = passwordHash
     };
 
+    // The caller revokes the user's refresh tokens, so other sessions must sign in with the new password.
+    public void ChangePassword(string passwordHash) => PasswordHash = passwordHash;
+
     public static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 }
