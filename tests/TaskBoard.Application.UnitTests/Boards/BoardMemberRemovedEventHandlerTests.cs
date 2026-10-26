@@ -22,8 +22,11 @@ public class BoardMemberRemovedEventHandlerTests
 
         await CreateHandler().Handle(new BoardMemberRemovedEvent(boardId, userId), CancellationToken.None);
 
-        await _notifier.Board(boardId).Received(1).BoardMemberRemoved(new BoardMemberRemovedMessage(boardId, userId));
-        await _notifier.Received(1).RemoveFromBoardAsync(boardId, userId, Arg.Any<CancellationToken>());
+        Received.InOrder(() =>
+        {
+            _notifier.RemoveFromBoardAsync(boardId, userId, Arg.Any<CancellationToken>());
+            _notifier.Board(boardId).BoardMemberRemoved(new BoardMemberRemovedMessage(boardId, userId));
+        });
     }
 
     [Fact]
@@ -36,5 +39,6 @@ public class BoardMemberRemovedEventHandlerTests
         await CreateHandler().Handle(new BoardMemberRemovedEvent(boardId, userId), CancellationToken.None);
 
         await _notifier.DidNotReceive().RemoveFromBoardAsync(boardId, userId, Arg.Any<CancellationToken>());
+        await _notifier.Board(boardId).Received(1).BoardMemberRemoved(new BoardMemberRemovedMessage(boardId, userId));
     }
 }
