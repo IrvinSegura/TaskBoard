@@ -4,6 +4,7 @@ using TaskBoard.Application.Features.Teams.AddTeamMember;
 using TaskBoard.Application.Features.Teams.ChangeTeamMemberRole;
 using TaskBoard.Application.Features.Teams.CreateTeam;
 using TaskBoard.Application.Features.Teams.GetMyTeams;
+using TaskBoard.Application.Features.Teams.GetTeamMembers;
 using TaskBoard.Application.Features.Teams.RemoveTeamMember;
 using TaskBoard.Domain.Teams;
 
@@ -32,6 +33,15 @@ internal sealed class TeamEndpoints : IEndpoint
             return result.ToHttpResult(id => Results.Created($"/teams/{id}", new { id }));
         });
 
+        group.MapGet("/{teamId:guid}/members", async (
+            Guid teamId,
+            IQueryHandler<GetTeamMembersQuery, IReadOnlyList<TeamMemberResponse>> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new GetTeamMembersQuery(teamId), cancellationToken);
+            return result.ToHttpResult();
+        });
+
         group.MapPost("/{teamId:guid}/members", async (
             Guid teamId,
             AddTeamMemberRequest request,
@@ -39,7 +49,7 @@ internal sealed class TeamEndpoints : IEndpoint
             CancellationToken cancellationToken) =>
         {
             var result = await handler.Handle(
-                new AddTeamMemberCommand(teamId, request.UserId, request.Role), cancellationToken);
+                new AddTeamMemberCommand(teamId, request.Email, request.Role), cancellationToken);
             return result.ToHttpResult();
         });
 
@@ -66,7 +76,7 @@ internal sealed class TeamEndpoints : IEndpoint
         });
     }
 
-    internal sealed record AddTeamMemberRequest(Guid UserId, TeamRole Role);
+    internal sealed record AddTeamMemberRequest(string Email, TeamRole Role);
 
     internal sealed record ChangeTeamMemberRoleRequest(TeamRole Role);
 }

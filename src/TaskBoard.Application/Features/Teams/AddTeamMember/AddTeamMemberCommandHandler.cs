@@ -22,12 +22,19 @@ internal sealed class AddTeamMemberCommandHandler(
             return TeamErrors.NotFound(command.TeamId);
         }
 
-        if (!await users.ExistsAsync(command.UserId, cancellationToken))
+        // Before the lookup, so plain members cannot use this endpoint to probe which emails are registered.
+        if (!team.CanManageMembers(currentUser.UserId))
         {
-            return UserErrors.NotFound(command.UserId);
+            return TeamErrors.NotAllowed;
         }
 
-        var result = team.AddMember(currentUser.UserId, command.UserId, command.Role);
+        var user = await users.GetByEmailAsync(command.Email, cancellationToken);
+        if (user is null)
+        {
+            return UserErrors.NotFoundByEmail;
+        }
+
+        var result = team.AddMember(currentUser.UserId, user.Id, command.Role);
         if (result.IsFailure)
         {
             return result;
