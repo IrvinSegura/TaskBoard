@@ -66,7 +66,7 @@ public sealed class Card : AggregateRoot
         Priority = priority;
         DueDate = dueDate;
 
-        Raise(new CardUpdatedEvent(Id, BoardId));
+        Raise(new CardUpdatedEvent(Id, BoardId, Title, Description, Priority, DueDate));
         return Result.Success();
     }
 
@@ -104,6 +104,11 @@ public sealed class Card : AggregateRoot
 
     public Result Unassign(Guid userId)
     {
+        if (IsArchived)
+        {
+            return CardErrors.Archived;
+        }
+
         var assignment = _assignments.SingleOrDefault(a => a.UserId == userId);
         if (assignment is null)
         {
@@ -111,6 +116,7 @@ public sealed class Card : AggregateRoot
         }
 
         _assignments.Remove(assignment);
+        Raise(new CardUnassignedEvent(Id, BoardId, userId));
         return Result.Success();
     }
 
