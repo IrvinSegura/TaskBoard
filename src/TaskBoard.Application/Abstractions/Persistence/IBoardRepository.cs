@@ -9,5 +9,11 @@ public interface IBoardRepository
 
     Task<Column?> GetColumnAsync(Guid columnId, CancellationToken cancellationToken);
 
+    // Boards of the team where the user is an explicit member, loaded with their members.
+    Task<IReadOnlyList<Board>> GetTeamBoardsWithMemberAsync(
+        Guid teamId,
+        Guid userId,
+        CancellationToken cancellationToken);
+
     void Add(Board board);
 }

@@ -16,5 +16,14 @@ internal sealed class BoardRepository(ApplicationDbContext db) : IBoardRepositor
     public Task<Column?> GetColumnAsync(Guid columnId, CancellationToken cancellationToken) =>
         db.Columns.SingleOrDefaultAsync(c => c.Id == columnId, cancellationToken);
 
+    public async Task<IReadOnlyList<Board>> GetTeamBoardsWithMemberAsync(
+        Guid teamId,
+        Guid userId,
+        CancellationToken cancellationToken) =>
+        await db.Boards
+            .Include(b => b.Members)
+            .Where(b => b.TeamId == teamId && b.Members.Any(m => m.UserId == userId))
+            .ToListAsync(cancellationToken);
+
     public void Add(Board board) => db.Boards.Add(board);
 }
