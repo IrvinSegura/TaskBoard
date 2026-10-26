@@ -5,15 +5,32 @@ namespace TaskBoard.Application.Abstractions.Realtime;
 /// </summary>
 public interface IBoardClient
 {
+    Task BoardRenamed(BoardRenamedMessage message);
+
+    Task BoardArchived(BoardArchivedMessage message);
+
+    // Also reaches the removed user, whose client should leave the board when it sees its own id.
+    Task BoardMemberRemoved(BoardMemberRemovedMessage message);
+
     Task ColumnCreated(ColumnCreatedMessage message);
+
+    Task ColumnRenamed(ColumnRenamedMessage message);
 
     Task CardCreated(CardCreatedMessage message);
 
+    Task CardUpdated(CardUpdatedMessage message);
+
     Task CardMoved(CardMovedMessage message);
+
+    Task CardArchived(CardArchivedMessage message);
 
     Task CardAssigned(CardAssignedMessage message);
 
+    Task CardUnassigned(CardUnassignedMessage message);
+
     Task CommentAdded(CommentAddedMessage message);
+
+    Task CommentEdited(CommentEditedMessage message);
 
     Task AttachmentAdded(AttachmentAddedMessage message);
 
