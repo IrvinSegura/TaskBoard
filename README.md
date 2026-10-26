@@ -2,164 +2,164 @@
 
 [![ci](https://github.com/IrvinSegura/TaskBoard/actions/workflows/ci.yml/badge.svg)](https://github.com/IrvinSegura/TaskBoard/actions/workflows/ci.yml)
 
-A Kanban-style task board API built with ASP.NET Core. Teams own boards, boards have columns and cards, and every change is pushed to connected clients in real time through SignalR.
+API de tablero de tareas estilo Kanban construida con ASP.NET Core. Los equipos tienen tableros, los tableros tienen columnas y tarjetas, y cada cambio se envía en tiempo real a los clientes conectados mediante SignalR.
 
-## Features
+## Funcionalidades
 
-- **Auth**: registration and login with JWT access tokens.
-- **Teams**: create teams, add and remove members, change roles and leave a team.
-- **Boards**: team boards with members, roles and visibility; rename, archive and restore them. Archived boards are read-only.
-- **Columns and cards**: create, rename and reorder columns; create, edit, move, archive and restore cards, assign or unassign members, and search or filter a board's cards.
-- **Comments and attachments**: add, edit and delete comments; upload, download and delete files (local disk or Azure Blob Storage).
-- **Notifications**: personal notifications with read tracking.
-- **Real time**: board events and notifications pushed over SignalR.
+- **Autenticación**: registro e inicio de sesión con tokens de acceso JWT.
+- **Equipos**: crear equipos, agregar y quitar miembros, cambiar roles y salir de un equipo.
+- **Tableros**: tableros por equipo con miembros, roles y visibilidad; renombrarlos, archivarlos y restaurarlos. Los tableros archivados son de solo lectura.
+- **Columnas y tarjetas**: crear, renombrar y reordenar columnas; crear, editar, mover, archivar y restaurar tarjetas, asignar o desasignar miembros, y buscar o filtrar las tarjetas de un tablero.
+- **Comentarios y adjuntos**: agregar, editar y borrar comentarios; subir, descargar y borrar archivos (disco local o Azure Blob Storage).
+- **Notificaciones**: notificaciones personales con marca de leído.
+- **Tiempo real**: eventos de tablero y notificaciones enviados por SignalR.
 
-## Tech stack
+## Stack tecnológico
 
-| Area | Technology |
+| Área | Tecnología |
 | --- | --- |
 | Runtime | .NET 10, ASP.NET Core Minimal APIs |
-| Persistence | EF Core 10, PostgreSQL 17 |
-| Real time | SignalR |
-| Validation | FluentValidation |
-| File storage | Local disk or Azure Blob Storage (Azurite locally) |
+| Persistencia | EF Core 10, PostgreSQL 17 |
+| Tiempo real | SignalR |
+| Validación | FluentValidation |
+| Almacenamiento de archivos | Disco local o Azure Blob Storage (Azurite en local) |
 | Logging | Serilog |
-| API docs | OpenAPI + Scalar |
-| Tests | xUnit, Shouldly, NSubstitute, Testcontainers, NetArchTest |
+| Documentación de la API | OpenAPI + Scalar |
+| Pruebas | xUnit, Shouldly, NSubstitute, Testcontainers, NetArchTest |
 
-## Architecture
+## Arquitectura
 
-The solution follows Clean Architecture. Dependencies point inwards only, and the architecture tests enforce it.
+La solución sigue Clean Architecture. Las dependencias solo apuntan hacia adentro, y las pruebas de arquitectura lo verifican.
 
 ```
 src/
-  TaskBoard.Domain          Aggregates, domain events, business rules. No dependencies.
-  TaskBoard.Application     Commands, queries, handlers, validators and abstractions (CQRS by feature).
-  TaskBoard.Infrastructure  EF Core, repositories, JWT, password hashing, file storage, outbox.
-  TaskBoard.Api             Minimal API endpoints, SignalR hub, middleware, composition root.
+  TaskBoard.Domain          Agregados, eventos de dominio y reglas de negocio. Sin dependencias.
+  TaskBoard.Application     Comandos, consultas, handlers, validadores y abstracciones (CQRS por funcionalidad).
+  TaskBoard.Infrastructure  EF Core, repositorios, JWT, hash de contraseñas, almacenamiento de archivos, outbox.
+  TaskBoard.Api             Endpoints Minimal API, hub de SignalR, middleware y composition root.
 tests/
   TaskBoard.Domain.UnitTests
   TaskBoard.Application.UnitTests
-  TaskBoard.Infrastructure.IntegrationTests   Real PostgreSQL through Testcontainers.
-  TaskBoard.Api.FunctionalTests               Full API in memory through WebApplicationFactory.
-  TaskBoard.ArchitectureTests                 Layer dependency rules.
+  TaskBoard.Infrastructure.IntegrationTests   PostgreSQL real con Testcontainers.
+  TaskBoard.Api.FunctionalTests               La API completa en memoria con WebApplicationFactory.
+  TaskBoard.ArchitectureTests                 Reglas de dependencia entre capas.
 ```
 
-Key design points:
+Decisiones de diseño principales:
 
-- **Handlers and decorators**: every command and query goes through logging, validation and board authorization decorators.
-- **Result pattern**: handlers return `Result`/`Result<T>` instead of throwing for expected errors; endpoints map them to Problem Details.
-- **Transactional outbox**: domain events are saved as outbox messages in the same transaction and dispatched by a background processor, which then fans out notifications and SignalR messages.
-- **Board-scoped authorization**: requests that touch a board are checked against the user's board role before the handler runs.
+- **Handlers y decoradores**: cada comando y consulta pasa por decoradores de logging, validación y autorización por tablero.
+- **Patrón Result**: los handlers devuelven `Result`/`Result<T>` en lugar de lanzar excepciones para errores esperados; los endpoints los convierten en Problem Details.
+- **Outbox transaccional**: los eventos de dominio se guardan como mensajes de outbox en la misma transacción y un proceso en segundo plano los despacha, enviando luego notificaciones y mensajes de SignalR.
+- **Autorización por tablero**: las peticiones que tocan un tablero se validan contra el rol del usuario en ese tablero antes de ejecutar el handler. Los tableros archivados rechazan cualquier escritura.
 
-## Getting started
+## Cómo empezar
 
-### Prerequisites
+### Requisitos
 
-- [.NET SDK 10](https://dotnet.microsoft.com/download) (see `global.json`)
-- [Docker](https://www.docker.com/) for PostgreSQL, Azurite and the integration tests
+- [.NET SDK 10](https://dotnet.microsoft.com/download) (ver `global.json`)
+- [Docker](https://www.docker.com/) para PostgreSQL, Azurite y las pruebas de integración
 
-### Run locally
+### Ejecutar en local
 
-1. Start PostgreSQL and Azurite:
+1. Levantar PostgreSQL y Azurite:
 
    ```bash
    docker compose up -d
    ```
 
-2. Run the API:
+2. Ejecutar la API:
 
    ```bash
    dotnet run --project src/TaskBoard.Api
    ```
 
-In the `Development` environment the API applies pending migrations on startup. The API listens on `http://localhost:5080` and the interactive API reference is at `http://localhost:5080/scalar`.
+En el entorno `Development` la API aplica las migraciones pendientes al arrancar. La API escucha en `http://localhost:5080` y la referencia interactiva está en `http://localhost:5080/scalar`.
 
-## Configuration
+## Configuración
 
-Settings live in `src/TaskBoard.Api/appsettings.json`, with development values in `appsettings.Development.json`. Override them with [user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) or environment variables (for example `Jwt__SigningKey`) outside development.
+La configuración está en `src/TaskBoard.Api/appsettings.json`, con los valores de desarrollo en `appsettings.Development.json`. Fuera de desarrollo, sobrescríbelos con [user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) o variables de entorno (por ejemplo `Jwt__SigningKey`).
 
-| Key | Description |
+| Clave | Descripción |
 | --- | --- |
-| `ConnectionStrings:Database` | PostgreSQL connection string. |
-| `Jwt:Issuer`, `Jwt:Audience` | Token issuer and audience. |
-| `Jwt:SigningKey` | Symmetric signing key. Use a long random value in any shared environment. |
-| `Jwt:AccessTokenLifetime` | Access token lifetime (`hh:mm:ss`). |
-| `FileStorage:Provider` | `Local` or `AzureBlob`. |
-| `FileStorage:LocalRootPath` | Folder for uploaded files when using `Local`. |
-| `FileStorage:AzureConnectionString` | Blob Storage connection string (`UseDevelopmentStorage=true` for Azurite). |
-| `FileStorage:AzureContainerName` | Blob container for attachments. |
-| `Outbox:PollingInterval`, `Outbox:BatchSize` | Outbox processor tuning. |
-| `Cors:AllowedOrigins` | Frontend origins allowed to call the API and the hub. |
+| `ConnectionStrings:Database` | Cadena de conexión de PostgreSQL. |
+| `Jwt:Issuer`, `Jwt:Audience` | Emisor y audiencia del token. |
+| `Jwt:SigningKey` | Clave simétrica de firma. Usa un valor largo y aleatorio en cualquier entorno compartido. |
+| `Jwt:AccessTokenLifetime` | Duración del token de acceso (`hh:mm:ss`). |
+| `FileStorage:Provider` | `Local` o `AzureBlob`. |
+| `FileStorage:LocalRootPath` | Carpeta de los archivos subidos cuando se usa `Local`. |
+| `FileStorage:AzureConnectionString` | Cadena de conexión de Blob Storage (`UseDevelopmentStorage=true` para Azurite). |
+| `FileStorage:AzureContainerName` | Contenedor de blobs para los adjuntos. |
+| `Outbox:PollingInterval`, `Outbox:BatchSize` | Ajustes del procesador del outbox. |
+| `Cors:AllowedOrigins` | Orígenes del frontend que pueden llamar a la API y al hub. |
 
 ## API
 
-All endpoints except `/auth/*` require a bearer token.
+Todos los endpoints excepto `/auth/*` requieren un token bearer.
 
-| Method | Route | Description |
+| Método | Ruta | Descripción |
 | --- | --- | --- |
-| `POST` | `/auth/register` | Register a user. |
-| `POST` | `/auth/login` | Get an access token. |
-| `GET` | `/teams` | List my teams. |
-| `POST` | `/teams` | Create a team. |
-| `POST` | `/teams/{teamId}/members` | Add a team member. |
-| `PATCH` | `/teams/{teamId}/members/{userId}` | Change a team member's role. |
-| `DELETE` | `/teams/{teamId}/members/{userId}` | Remove a team member, or leave the team with your own id. Also removes them from the team's boards. |
-| `GET` | `/teams/{teamId}/boards` | List a team's boards; `?archived=true` lists archived ones. |
-| `POST` | `/teams/{teamId}/boards` | Create a board. |
-| `GET` | `/boards/{boardId}` | Get a board with its columns and cards. |
-| `PATCH` | `/boards/{boardId}` | Rename a board. |
-| `POST` | `/boards/{boardId}/archive` | Archive a board. It becomes read-only. |
-| `POST` | `/boards/{boardId}/restore` | Restore an archived board. |
-| `POST` | `/boards/{boardId}/members` | Add a board member. |
-| `DELETE` | `/boards/{boardId}/members/{userId}` | Remove a board member. |
-| `POST` | `/boards/{boardId}/columns` | Create a column. |
-| `PATCH` | `/columns/{columnId}` | Rename a column. |
-| `PATCH` | `/columns/{columnId}/move` | Move a column between two neighbouring columns. |
-| `POST` | `/columns/{columnId}/cards` | Create a card. |
-| `GET` | `/boards/{boardId}/cards` | Search and filter cards: `text`, `columnId`, `assigneeId`, `priority`, `dueBefore`, `archived`. |
-| `GET` | `/cards/{cardId}` | Get a card with its assignees, attachments and comment count. |
-| `PUT` | `/cards/{cardId}` | Edit a card's title, description, priority and due date. |
-| `PATCH` | `/cards/{cardId}/move` | Move a card to a column and position. |
-| `POST` | `/cards/{cardId}/archive` | Archive a card. |
-| `POST` | `/cards/{cardId}/restore` | Restore an archived card to its column. |
-| `POST` | `/cards/{cardId}/assignees` | Assign a member to a card. |
-| `DELETE` | `/cards/{cardId}/assignees/{userId}` | Unassign a member from a card. |
-| `GET` | `/cards/{cardId}/comments` | List a card's comments. |
-| `POST` | `/cards/{cardId}/comments` | Add a comment. |
-| `PATCH` | `/comments/{commentId}` | Edit your own comment. |
-| `DELETE` | `/comments/{commentId}` | Delete a comment (author or board admin). |
-| `POST` | `/cards/{cardId}/attachments` | Upload an attachment (multipart, max 10 MB). |
-| `GET` | `/attachments/{attachmentId}` | Download an attachment. |
-| `DELETE` | `/attachments/{attachmentId}` | Delete an attachment and its file (uploader or board admin). |
-| `GET` | `/notifications` | List my notifications. |
-| `PATCH` | `/notifications/{notificationId}/read` | Mark a notification as read. |
+| `POST` | `/auth/register` | Registrar un usuario. |
+| `POST` | `/auth/login` | Obtener un token de acceso. |
+| `GET` | `/teams` | Listar mis equipos. |
+| `POST` | `/teams` | Crear un equipo. |
+| `POST` | `/teams/{teamId}/members` | Agregar un miembro al equipo. |
+| `PATCH` | `/teams/{teamId}/members/{userId}` | Cambiar el rol de un miembro del equipo. |
+| `DELETE` | `/teams/{teamId}/members/{userId}` | Quitar a un miembro del equipo, o salir del equipo con tu propio id. También lo quita de los tableros del equipo. |
+| `GET` | `/teams/{teamId}/boards` | Listar los tableros de un equipo; `?archived=true` lista los archivados. |
+| `POST` | `/teams/{teamId}/boards` | Crear un tablero. |
+| `GET` | `/boards/{boardId}` | Obtener un tablero con sus columnas y tarjetas. |
+| `PATCH` | `/boards/{boardId}` | Renombrar un tablero. |
+| `POST` | `/boards/{boardId}/archive` | Archivar un tablero. Queda de solo lectura. |
+| `POST` | `/boards/{boardId}/restore` | Restaurar un tablero archivado. |
+| `POST` | `/boards/{boardId}/members` | Agregar un miembro al tablero. |
+| `DELETE` | `/boards/{boardId}/members/{userId}` | Quitar a un miembro del tablero. |
+| `POST` | `/boards/{boardId}/columns` | Crear una columna. |
+| `PATCH` | `/columns/{columnId}` | Renombrar una columna. |
+| `PATCH` | `/columns/{columnId}/move` | Mover una columna entre dos columnas vecinas. |
+| `POST` | `/columns/{columnId}/cards` | Crear una tarjeta. |
+| `GET` | `/boards/{boardId}/cards` | Buscar y filtrar tarjetas: `text`, `columnId`, `assigneeId`, `priority`, `dueBefore`, `archived`. |
+| `GET` | `/cards/{cardId}` | Obtener una tarjeta con sus miembros asignados, adjuntos y número de comentarios. |
+| `PUT` | `/cards/{cardId}` | Editar título, descripción, prioridad y fecha límite de una tarjeta. |
+| `PATCH` | `/cards/{cardId}/move` | Mover una tarjeta a una columna y posición. |
+| `POST` | `/cards/{cardId}/archive` | Archivar una tarjeta. |
+| `POST` | `/cards/{cardId}/restore` | Restaurar una tarjeta archivada en su columna. |
+| `POST` | `/cards/{cardId}/assignees` | Asignar un miembro a una tarjeta. |
+| `DELETE` | `/cards/{cardId}/assignees/{userId}` | Desasignar a un miembro de una tarjeta. |
+| `GET` | `/cards/{cardId}/comments` | Listar los comentarios de una tarjeta. |
+| `POST` | `/cards/{cardId}/comments` | Agregar un comentario. |
+| `PATCH` | `/comments/{commentId}` | Editar tu propio comentario. |
+| `DELETE` | `/comments/{commentId}` | Borrar un comentario (autor o admin del tablero). |
+| `POST` | `/cards/{cardId}/attachments` | Subir un adjunto (multipart, máximo 10 MB). |
+| `GET` | `/attachments/{attachmentId}` | Descargar un adjunto. |
+| `DELETE` | `/attachments/{attachmentId}` | Borrar un adjunto y su archivo (quien lo subió o admin del tablero). |
+| `GET` | `/notifications` | Listar mis notificaciones. |
+| `PATCH` | `/notifications/{notificationId}/read` | Marcar una notificación como leída. |
 
-## Real time
+## Tiempo real
 
-Connect to the SignalR hub at `/hubs/board`. Browsers send the token in the `access_token` query string.
+Conéctate al hub de SignalR en `/hubs/board`. Los navegadores envían el token en el parámetro `access_token` de la query string.
 
-- Call `JoinBoard(boardId)` when opening a board and `LeaveBoard(boardId)` when leaving it. Only board members can join.
-- Board events: `BoardRenamed`, `BoardArchived`, `BoardRestored`, `BoardMemberRemoved`, `ColumnCreated`, `ColumnRenamed`, `ColumnMoved`, `CardCreated`, `CardUpdated`, `CardMoved`, `CardArchived`, `CardRestored`, `CardAssigned`, `CardUnassigned`, `CommentAdded`, `CommentEdited`, `CommentDeleted`, `AttachmentAdded`, `AttachmentDeleted`.
-- When a user loses access to a board, the server removes their connections from its group. They still receive `BoardMemberRemoved` with their own user id first, so the client can close the board.
-- Personal events: `NotificationReceived`, delivered to every connection of the user without joining a board.
+- Llama a `JoinBoard(boardId)` al abrir un tablero y a `LeaveBoard(boardId)` al salir. Solo los miembros del tablero pueden unirse.
+- Eventos de tablero: `BoardRenamed`, `BoardArchived`, `BoardRestored`, `BoardMemberRemoved`, `ColumnCreated`, `ColumnRenamed`, `ColumnMoved`, `CardCreated`, `CardUpdated`, `CardMoved`, `CardArchived`, `CardRestored`, `CardAssigned`, `CardUnassigned`, `CommentAdded`, `CommentEdited`, `CommentDeleted`, `AttachmentAdded`, `AttachmentDeleted`.
+- Cuando un usuario pierde acceso a un tablero, el servidor saca sus conexiones del grupo. Antes recibe `BoardMemberRemoved` con su propio id, para que el cliente pueda cerrar el tablero.
+- Eventos personales: `NotificationReceived`, que llega a todas las conexiones del usuario sin unirse a ningún tablero.
 
-## Tests
+## Pruebas
 
 ```bash
 dotnet test TaskBoard.slnx
 ```
 
-Integration and functional tests start their own PostgreSQL containers, so Docker must be running. CI runs the full suite on every push and pull request to `main`.
+Las pruebas de integración y funcionales levantan sus propios contenedores de PostgreSQL y aplican las migraciones, así que Docker debe estar corriendo. El CI ejecuta toda la suite en cada push y pull request a `main`.
 
-## Migrations
+## Migraciones
 
-EF Core tools are pinned as a local tool:
+Las herramientas de EF Core están fijadas como herramienta local:
 
 ```bash
 dotnet tool restore
 ```
 
 ```bash
-dotnet ef migrations add <Name> --project src/TaskBoard.Infrastructure --startup-project src/TaskBoard.Api --output-dir Persistence/Migrations
+dotnet ef migrations add <Nombre> --project src/TaskBoard.Infrastructure --startup-project src/TaskBoard.Api --output-dir Persistence/Migrations
 ```
