@@ -156,9 +156,27 @@ public sealed class Board : AggregateRoot
             return BoardErrors.InvalidColumnNeighbour;
         }
 
+        if (PositionCalculator.NeedsRebalance(previous.Column?.Position, next.Column?.Position))
+        {
+            RenumberColumns(except: column);
+        }
+
         column.MoveTo(PositionCalculator.Between(previous.Column?.Position, next.Column?.Position));
         Raise(new ColumnMovedEvent(Id, column.Id, column.Position));
         return Result.Success();
+    }
+
+    // Spreads the other columns evenly again, keeping their order, once positions ran out of precision.
+    // Each one raises ColumnMoved so clients pick up the new positions.
+    private void RenumberColumns(Column except)
+    {
+        var ordered = _columns.Where(c => c != except).OrderBy(c => c.Position).ToList();
+
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            ordered[i].MoveTo(PositionCalculator.Sequential(i));
+            Raise(new ColumnMovedEvent(Id, ordered[i].Id, ordered[i].Position));
+        }
     }
 
     // A neighbour id that is not another column of this board is missing, not ignored.

@@ -85,6 +85,20 @@ public sealed class Card : AggregateRoot
         return Result.Success();
     }
 
+    /// <summary>
+    /// Renumbering after positions in the column ran out of precision: same column, same relative order.
+    /// Archived cards are renumbered too, so they come back in the right place when restored.
+    /// </summary>
+    public void Reposition(double position)
+    {
+        Position = position;
+
+        if (!IsArchived)
+        {
+            Raise(new CardMovedEvent(Id, BoardId, ColumnId, ColumnId, position));
+        }
+    }
+
     public Result Assign(Guid userId, Guid assignedById)
     {
         if (IsArchived)
