@@ -32,18 +32,14 @@ internal sealed class OutboxProcessor(
         }
     }
 
-    // TODO: with several API instances, claim rows with FOR UPDATE SKIP LOCKED so a message runs only once.
-    private async Task ProcessBatchAsync(CancellationToken cancellationToken)
+    // Returns the number of messages handled.
+    internal async Task<int> ProcessBatchAsync(CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var dispatcher = scope.ServiceProvider.GetRequiredService<DomainEventDispatcher>();
 
-        var messages = await db.OutboxMessages
-            .Where(m => m.ProcessedAt == null)
-            .OrderBy(m => m.OccurredAt)
-            .Take(options.Value.BatchSize)
-            .ToListAsync(cancellationToken);
+        var messages = await ClaimBatchAsync(db, cancellationToken);
 
         foreach (var message in messages)
         {
@@ -62,6 +58,33 @@ internal sealed class OutboxProcessor(
         }
 
         await db.SaveChangesAsync(cancellationToken);
+        return messages.Count;
+    }
+
+    // Several API instances poll the same table. One statement reserves a batch for this instance:
+    // SKIP LOCKED makes concurrent claims take different rows, and the lease keeps the rows reserved
+    // while the handlers run outside any transaction. Rows whose lease expired (their instance died) are claimable again.
+    private async Task<List<OutboxMessage>> ClaimBatchAsync(ApplicationDbContext db, CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+        var lockedUntil = now.Add(options.Value.LockDuration);
+        var batchSize = options.Value.BatchSize;
+
+        var messages = await db.OutboxMessages
+            .FromSql($"""
+                UPDATE "OutboxMessages" SET "LockedUntil" = {lockedUntil}
+                WHERE "Id" IN (
+                    SELECT "Id" FROM "OutboxMessages"
+                    WHERE "ProcessedAt" IS NULL AND ("LockedUntil" IS NULL OR "LockedUntil" < {now})
+                    ORDER BY "OccurredAt"
+                    LIMIT {batchSize}
+                    FOR UPDATE SKIP LOCKED)
+                RETURNING *
+                """)
+            .ToListAsync(cancellationToken);
+
+        // RETURNING does not keep the subquery's order.
+        return [.. messages.OrderBy(m => m.OccurredAt).ThenBy(m => m.Id)];
     }
 
     private static IDomainEvent Deserialize(OutboxMessage message)
