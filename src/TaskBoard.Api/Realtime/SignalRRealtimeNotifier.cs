@@ -5,18 +5,13 @@ namespace TaskBoard.Api.Realtime;
 
 internal sealed class SignalRRealtimeNotifier(
     IHubContext<BoardHub, IBoardClient> hubContext,
-    UserConnectionTracker connections)
+    IBoardGroupEvictor evictor)
     : IRealtimeNotifier
 {
     public IBoardClient Board(Guid boardId) => hubContext.Clients.Group(HubGroups.Board(boardId));
 
     public IBoardClient User(Guid userId) => hubContext.Clients.User(userId.ToString());
 
-    public async Task RemoveFromBoardAsync(Guid boardId, Guid userId, CancellationToken cancellationToken)
-    {
-        foreach (var connectionId in connections.GetConnections(userId))
-        {
-            await hubContext.Groups.RemoveFromGroupAsync(connectionId, HubGroups.Board(boardId), cancellationToken);
-        }
-    }
+    public Task RemoveFromBoardAsync(Guid boardId, Guid userId, CancellationToken cancellationToken) =>
+        evictor.EvictAsync(boardId, userId, cancellationToken);
 }

@@ -3,7 +3,7 @@ namespace TaskBoard.Api.Realtime;
 /// <summary>
 /// Open hub connections per user, so the server can drop a user from board groups when their access is revoked.
 /// </summary>
-// TODO: in-memory, so it only sees this instance; with several API instances track connections in the backplane.
+// Only this instance's connections. With several instances, RedisBoardGroupEvictor asks each one to evict its own.
 public sealed class UserConnectionTracker
 {
     private readonly Dictionary<Guid, HashSet<string>> _connections = [];
