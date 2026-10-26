@@ -1,6 +1,7 @@
 using TaskBoard.Api.Extensions;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Features.Comments.AddComment;
+using TaskBoard.Application.Features.Comments.EditComment;
 using TaskBoard.Application.Features.Comments.GetCardComments;
 
 namespace TaskBoard.Api.Endpoints;
@@ -29,7 +30,21 @@ internal sealed class CommentEndpoints : IEndpoint
             var result = await handler.Handle(new AddCommentCommand(cardId, request.Body), cancellationToken);
             return result.ToHttpResult(id => Results.Ok(new { id }));
         });
+
+        app.MapPatch("/comments/{commentId:guid}", async (
+            Guid commentId,
+            EditCommentRequest request,
+            ICommandHandler<EditCommentCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new EditCommentCommand(commentId, request.Body), cancellationToken);
+            return result.ToHttpResult();
+        })
+        .WithTags("Comments")
+        .RequireAuthorization();
     }
 
     internal sealed record AddCommentRequest(string Body);
+
+    internal sealed record EditCommentRequest(string Body);
 }

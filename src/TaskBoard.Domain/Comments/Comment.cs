@@ -44,6 +44,8 @@ public sealed class Comment : AggregateRoot
 
         Body = body.Trim();
         IsEdited = true;
+
+        Raise(new CommentEditedEvent(Id, CardId, BoardId, Body));
         return Result.Success();
     }
 }
