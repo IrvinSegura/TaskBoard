@@ -1,0 +1,23 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="docker-compose.yml" />
+    <File Path="global.json" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/TaskBoard.Domain/TaskBoard.Domain.csproj" />
+    <Project Path="src/TaskBoard.Application/TaskBoard.Application.csproj" />
+    <Project Path="src/TaskBoard.Infrastructure/TaskBoard.Infrastructure.csproj" />
+    <Project Path="src/TaskBoard.Api/TaskBoard.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TaskBoard.Domain.UnitTests/TaskBoard.Domain.UnitTests.csproj" />
+    <Project Path="tests/TaskBoard.Application.UnitTests/TaskBoard.Application.UnitTests.csproj" />
+    <Project Path="tests/TaskBoard.Infrastructure.IntegrationTests/TaskBoard.Infrastructure.IntegrationTests.csproj" />
+    <Project Path="tests/TaskBoard.Api.FunctionalTests/TaskBoard.Api.FunctionalTests.csproj" />
+    <Project Path="tests/TaskBoard.ArchitectureTests/TaskBoard.ArchitectureTests.csproj" />
+  </Folder>
+</Solution>

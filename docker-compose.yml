@@ -1,0 +1,21 @@
+# Local development dependencies. Credentials are dev-only placeholders.
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: taskboard
+      POSTGRES_USER: taskboard
+      POSTGRES_PASSWORD: taskboard
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: azurite-blob --blobHost 0.0.0.0
+    ports:
+      - "10000:10000"
+
+volumes:
+  postgres-data:
