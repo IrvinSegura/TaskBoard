@@ -9,10 +9,11 @@ namespace TaskBoard.Application.Features.Auth.Login;
 internal sealed class LoginCommandHandler(
     IUserRepository users,
     IPasswordHasher passwordHasher,
-    ITokenProvider tokenProvider)
-    : ICommandHandler<LoginCommand, AccessTokenResponse>
+    AuthTokenService tokenService,
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<LoginCommand, AuthTokensResponse>
 {
-    public async Task<Result<AccessTokenResponse>> Handle(LoginCommand command, CancellationToken cancellationToken)
+    public async Task<Result<AuthTokensResponse>> Handle(LoginCommand command, CancellationToken cancellationToken)
     {
         var user = await users.GetByEmailAsync(command.Email, cancellationToken);
 
@@ -22,6 +23,9 @@ internal sealed class LoginCommandHandler(
             return UserErrors.InvalidCredentials;
         }
 
-        return tokenProvider.CreateAccessToken(user);
+        var tokens = tokenService.Issue(user);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return tokens;
     }
 }
