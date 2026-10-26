@@ -17,6 +17,9 @@ public static class UserErrors
     public static readonly Error WrongPassword =
         Error.Validation("Users.WrongPassword", "The current password is incorrect.");
 
+    public static readonly Error NotFoundByEmail =
+        Error.NotFound("Users.NotFoundByEmail", "No user is registered with that email.");
+
     public static Error NotFound(Guid userId) =>
         Error.NotFound("Users.NotFound", $"User '{userId}' was not found.");
 }

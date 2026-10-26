@@ -126,7 +126,8 @@ Todos los endpoints excepto `/auth/*` y `/health*` requieren un token bearer. Lo
 | `POST` | `/me/password` | Cambiar la contraseña. Revoca todos los refresh tokens del usuario. |
 | `GET` | `/teams` | Listar mis equipos. |
 | `POST` | `/teams` | Crear un equipo. |
-| `POST` | `/teams/{teamId}/members` | Agregar un miembro al equipo. |
+| `GET` | `/teams/{teamId}/members` | Listar los miembros del equipo con su nombre, email y rol. El dueño aparece primero. |
+| `POST` | `/teams/{teamId}/members` | Agregar un miembro al equipo por su email (`email`, `role`). Solo dueños y admins. |
 | `PATCH` | `/teams/{teamId}/members/{userId}` | Cambiar el rol de un miembro del equipo. |
 | `DELETE` | `/teams/{teamId}/members/{userId}` | Quitar a un miembro del equipo, o salir del equipo con tu propio id. También lo quita de los tableros del equipo. |
 | `GET` | `/teams/{teamId}/boards` | Listar los tableros de un equipo; `?archived=true` lista los archivados. |
