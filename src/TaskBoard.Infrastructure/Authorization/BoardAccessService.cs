@@ -44,6 +44,9 @@ internal sealed class BoardAccessService(ApplicationDbContext db) : IBoardAccess
         return null;
     }
 
+    public Task<bool> IsArchivedAsync(Guid boardId, CancellationToken cancellationToken) =>
+        db.Boards.AnyAsync(b => b.Id == boardId && b.IsArchived, cancellationToken);
+
     public Task<Guid?> ResolveBoardIdAsync(BoardScope scope, Guid scopeId, CancellationToken cancellationToken) =>
         scope switch
         {

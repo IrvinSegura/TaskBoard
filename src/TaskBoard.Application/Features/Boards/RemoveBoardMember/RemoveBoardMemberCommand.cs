@@ -11,4 +11,7 @@ public sealed record RemoveBoardMemberCommand(Guid BoardId, Guid UserId) : IComm
     Guid IBoardScopedRequest.ScopeId => BoardId;
 
     BoardRole IBoardScopedRequest.MinimumRole => BoardRole.Admin;
+
+    // Revoking access must keep working after the board is archived.
+    bool IBoardScopedRequest.AllowsArchivedBoard => true;
 }
