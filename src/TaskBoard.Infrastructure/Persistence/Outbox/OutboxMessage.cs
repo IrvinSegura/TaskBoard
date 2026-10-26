@@ -20,6 +20,9 @@ public sealed class OutboxMessage
 
     public DateTimeOffset? ProcessedAt { get; set; }
 
+    // Lease taken by the instance processing the message; see OutboxProcessor.
+    public DateTimeOffset? LockedUntil { get; set; }
+
     public string? Error { get; set; }
 
     public static OutboxMessage Create(IDomainEvent domainEvent, DateTimeOffset occurredAt)

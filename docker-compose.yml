@@ -1,4 +1,9 @@
-# Local development dependencies. Credentials are dev-only placeholders.
+# Full local stack: docker compose up --build
+# Only the dependencies, for running the API with dotnet run: docker compose up -d postgres azurite redis
+# Credentials and keys are dev-only placeholders; never reuse them in a shared environment.
+
+x-database-connection: &database-connection "Host=postgres;Port=5432;Database=taskboard;Username=taskboard;Password=taskboard"
+
 services:
   postgres:
     image: postgres:17
@@ -10,12 +15,64 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskboard -d taskboard"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
-    command: azurite-blob --blobHost 0.0.0.0
+    # The Blob SDK can be newer than the Azurite image; skip its API version check.
+    command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
     ports:
       - "10000:10000"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Applies pending migrations and exits; the API starts only after it succeeds.
+  migrations:
+    build:
+      context: .
+      dockerfile: src/TaskBoard.Api/Dockerfile
+      target: migrations
+    environment:
+      ConnectionStrings__Database: *database-connection
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: src/TaskBoard.Api/Dockerfile
+      target: api
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Database: *database-connection
+      ConnectionStrings__Redis: redis:6379
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-compose-only-signing-key-change-me-0123456789}
+      FileStorage__Provider: AzureBlob
+      # Azurite's well-known development account.
+      FileStorage__AzureConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
+      Cors__AllowedOrigins__0: http://localhost:5173
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      azurite:
+        condition: service_started
 
 volumes:
   postgres-data:

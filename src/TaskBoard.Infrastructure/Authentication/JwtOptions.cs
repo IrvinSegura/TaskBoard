@@ -12,10 +12,16 @@ public sealed class JwtOptions
     [Required]
     public string Audience { get; init; } = null!;
 
-    // HMAC-SHA256 needs at least 256 bits. Keep the real key in user-secrets or environment variables.
-    [Required]
-    [MinLength(32)]
+    // Never stored in appsettings: it comes from the Jwt__SigningKey environment variable (or user-secrets).
+    // A missing key is reported at startup by AddAuthenticationServices. HMAC-SHA256 needs at least 256 bits.
+    [MinLength(32, ErrorMessage = "Jwt:SigningKey must be at least 32 characters (256 bits) long.")]
     public string SigningKey { get; init; } = null!;
 
-    public TimeSpan AccessTokenLifetime { get; init; } = TimeSpan.FromHours(1);
+    // Short-lived: clients renew it with the refresh token instead of signing in again.
+    public TimeSpan AccessTokenLifetime { get; init; } = TimeSpan.FromMinutes(15);
+
+    public TimeSpan RefreshTokenLifetime { get; init; } = TimeSpan.FromDays(7);
+
+    // How often expired refresh tokens are deleted. Zero turns the cleanup off.
+    public TimeSpan RefreshTokenCleanupInterval { get; init; } = TimeSpan.FromDays(1);
 }

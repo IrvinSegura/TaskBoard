@@ -63,4 +63,31 @@ public class MoveCardCommandHandlerTests
         result.Value.Position.ShouldBe(1500d);
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task Handle_NeighboursTooCloseToSplit_RenumbersTheColumnFirst()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Board", Guid.NewGuid(), BoardVisibility.Private);
+        var column = board.AddColumn("Doing").Value;
+        var previous = Card.Create(board.Id, column.Id, "Previous", null, Guid.NewGuid(), 1000d);
+        var next = Card.Create(board.Id, column.Id, "Next", null, Guid.NewGuid(), 1000.0000001);
+        var tail = Card.Create(board.Id, column.Id, "Tail", null, Guid.NewGuid(), 3000d);
+        var card = Card.Create(board.Id, Guid.NewGuid(), "Card", null, Guid.NewGuid(), 1024);
+
+        _cards.GetByIdAsync(card.Id, Arg.Any<CancellationToken>()).Returns(card);
+        _boards.GetColumnAsync(column.Id, Arg.Any<CancellationToken>()).Returns(column);
+        _cards.GetPositionInColumnAsync(previous.Id, column.Id, Arg.Any<CancellationToken>()).Returns((double?)previous.Position);
+        _cards.GetPositionInColumnAsync(next.Id, column.Id, Arg.Any<CancellationToken>()).Returns((double?)next.Position);
+        _cards.GetColumnCardsAsync(column.Id, Arg.Any<CancellationToken>()).Returns([previous, next, tail]);
+
+        var result = await CreateHandler().Handle(
+            new MoveCardCommand(card.Id, column.Id, previous.Id, next.Id), CancellationToken.None);
+
+        result.IsSuccess.ShouldBeTrue();
+        previous.Position.ShouldBe(PositionCalculator.Sequential(0));
+        next.Position.ShouldBe(PositionCalculator.Sequential(1));
+        tail.Position.ShouldBe(PositionCalculator.Sequential(2));
+        result.Value.Position.ShouldBe((previous.Position + next.Position) / 2);
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
 }

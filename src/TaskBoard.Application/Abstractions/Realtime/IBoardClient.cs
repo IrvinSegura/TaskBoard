@@ -11,7 +11,8 @@ public interface IBoardClient
 
     Task BoardRestored(BoardRestoredMessage message);
 
-    // Also reaches the removed user, whose client should leave the board when it sees its own id.
+    // Also reaches a user who lost access, whose client should leave the board when it sees its own id.
+    // That user can get it twice (direct notice and group message), so handle it idempotently.
     Task BoardMemberRemoved(BoardMemberRemovedMessage message);
 
     Task ColumnCreated(ColumnCreatedMessage message);

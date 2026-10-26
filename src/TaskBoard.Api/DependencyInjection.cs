@@ -6,13 +6,16 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 using TaskBoard.Api.Extensions;
 using TaskBoard.Api.Middleware;
+using TaskBoard.Api.RateLimiting;
 using TaskBoard.Api.Realtime;
 using TaskBoard.Api.Services;
 using TaskBoard.Application.Abstractions.Authentication;
 using TaskBoard.Application.Abstractions.Realtime;
 using TaskBoard.Domain.Attachments;
+using TaskBoard.Infrastructure;
 using TaskBoard.Infrastructure.Authentication;
 
 namespace TaskBoard.Api;
@@ -33,11 +36,7 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUser>();
 
-        services.AddSignalR()
-            .AddJsonProtocol(options => options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-        services.AddSingleton<IUserIdProvider, SubjectUserIdProvider>();
-        services.AddSingleton<UserConnectionTracker>();
-        services.AddSingleton<IRealtimeNotifier, SignalRRealtimeNotifier>();
+        services.AddRealtime(configuration);
 
         // Leave room above the file limit for the multipart envelope.
         services.Configure<FormOptions>(options => options.MultipartBodyLengthLimit = AttachmentRules.MaxSizeInBytes + 64 * 1024);
@@ -50,10 +49,37 @@ public static class DependencyInjection
 
         services.AddJwtAuthentication();
         services.AddAuthorization();
+        services.AddTrustedForwardedHeaders(configuration);
+        services.AddAuthRateLimiting(configuration);
 
         services.AddEndpoints(typeof(DependencyInjection).Assembly);
 
         return services;
+    }
+
+    private static void AddRealtime(this IServiceCollection services, IConfiguration configuration)
+    {
+        var signalR = services.AddSignalR()
+            .AddJsonProtocol(options => options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+        services.AddSingleton<IUserIdProvider, SubjectUserIdProvider>();
+        services.AddSingleton<UserConnectionTracker>();
+        services.AddSingleton<LocalBoardGroupEvictor>();
+        services.AddSingleton<IRealtimeNotifier, SignalRRealtimeNotifier>();
+
+        var redisConnectionString = configuration.GetRedisConnectionString();
+        if (redisConnectionString is null)
+        {
+            services.AddSingleton<IBoardGroupEvictor>(sp => sp.GetRequiredService<LocalBoardGroupEvictor>());
+            return;
+        }
+
+        // Backplane: a message sent on one instance reaches clients connected to any instance.
+        signalR.AddStackExchangeRedis(redisConnectionString, options =>
+            options.Configuration.ChannelPrefix = RedisChannel.Literal("taskboard"));
+
+        services.AddSingleton<IBoardGroupEvictor, RedisBoardGroupEvictor>();
+        services.AddHostedService<RedisBoardGroupEvictionListener>();
     }
 
     private static void AddJwtAuthentication(this IServiceCollection services)

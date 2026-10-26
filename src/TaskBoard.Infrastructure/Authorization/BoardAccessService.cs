@@ -5,7 +5,7 @@ using TaskBoard.Infrastructure.Persistence;
 
 namespace TaskBoard.Infrastructure.Authorization;
 
-// TODO: cache roles for a few seconds if this becomes hot; invalidate on membership changes.
+// Always reads the database; the API uses it through CachedBoardAccessService.
 internal sealed class BoardAccessService(ApplicationDbContext db) : IBoardAccessService
 {
     public async Task<BoardRole?> GetRoleAsync(Guid boardId, Guid userId, CancellationToken cancellationToken)

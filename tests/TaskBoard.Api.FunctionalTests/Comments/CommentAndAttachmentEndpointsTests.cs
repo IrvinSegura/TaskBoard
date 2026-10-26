@@ -25,7 +25,7 @@ public class CommentAndAttachmentEndpointsTests(TaskBoardApiFactory factory) : I
         byAdmin.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
         var comments = await admin.Client.GetFromJsonAsync<JsonElement>($"/cards/{cardId}/comments");
-        comments.EnumerateArray().ShouldBeEmpty();
+        comments.GetProperty("items").EnumerateArray().ShouldBeEmpty();
     }
 
     [Fact]
@@ -57,6 +57,48 @@ public class CommentAndAttachmentEndpointsTests(TaskBoardApiFactory factory) : I
         // Authorization resolves the board from the attachment, so a deleted one is simply not found.
         (await uploader.Client.GetAsync($"/attachments/{attachmentId}")).StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async Task GetComments_ReturnsPagesOldestFirst()
+    {
+        var (admin, _, _, cardId) = await CreateBoardWithEditorsAsync();
+        for (var i = 1; i <= 5; i++)
+        {
+            await admin.Client.PostAsJsonAsync($"/cards/{cardId}/comments", new { body = $"Comment {i}" });
+        }
+
+        var firstPage = await admin.Client.GetFromJsonAsync<JsonElement>($"/cards/{cardId}/comments?pageSize=2");
+        var lastPage = await admin.Client.GetFromJsonAsync<JsonElement>($"/cards/{cardId}/comments?page=3&pageSize=2");
+
+        Bodies(firstPage).ShouldBe(["Comment 1", "Comment 2"]);
+        firstPage.GetProperty("totalCount").GetInt32().ShouldBe(5);
+        firstPage.GetProperty("hasNextPage").GetBoolean().ShouldBeTrue();
+        Bodies(lastPage).ShouldBe(["Comment 5"]);
+        lastPage.GetProperty("hasNextPage").GetBoolean().ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task UploadAttachment_WithContentThatDoesNotMatchTheExtension_IsRejected()
+    {
+        var (_, uploader, _, cardId) = await CreateBoardWithEditorsAsync();
+
+        // A script renamed to .png: the extension is allowed, but the bytes are not a PNG.
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent("#!/bin/sh\necho not an image\n"u8.ToArray());
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "file", "screenshot.png");
+
+        var upload = await uploader.Client.PostAsync($"/cards/{cardId}/attachments", form);
+
+        upload.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        (await ApiDriver.ReadErrorCodeAsync(upload)).ShouldBe("Attachments.ContentMismatch");
+
+        var card = await uploader.Client.GetFromJsonAsync<JsonElement>($"/cards/{cardId}");
+        card.GetProperty("attachments").EnumerateArray().ShouldBeEmpty();
+    }
+
+    private static List<string?> Bodies(JsonElement page) =>
+        page.GetProperty("items").EnumerateArray().Select(c => c.GetProperty("body").GetString()).ToList();
 
     private async Task<(TestUser Admin, TestUser Editor, TestUser OtherEditor, Guid CardId)> CreateBoardWithEditorsAsync()
     {

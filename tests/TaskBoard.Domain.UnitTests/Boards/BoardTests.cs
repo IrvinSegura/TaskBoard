@@ -174,4 +174,28 @@ public class BoardTests
 
         second.Position.ShouldBeGreaterThan(first.Position);
     }
+
+    [Fact]
+    public void MoveColumn_RepeatedlyIntoTheSameGap_RenumbersAndKeepsTheOrder()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);
+        var first = board.AddColumn("First").Value;
+        var a = board.AddColumn("A").Value;
+        var b = board.AddColumn("B").Value;
+
+        // Alternately moves A and B right after First, halving the same gap each time.
+        var expected = new List<Column> { first, a, b };
+        for (var i = 0; i < 60; i++)
+        {
+            var moving = i % 2 == 0 ? b : a;
+            board.MoveColumn(moving.Id, first.Id, expected[1].Id).IsSuccess.ShouldBeTrue();
+            expected.Remove(moving);
+            expected.Insert(1, moving);
+        }
+
+        board.Columns.OrderBy(c => c.Position).ShouldBe(expected);
+        var positions = board.Columns.Select(c => c.Position).Order().ToList();
+        positions.Zip(positions.Skip(1), (previous, next) => next - previous).ShouldAllBe(gap => gap > 0);
+        board.DomainEvents.OfType<ColumnMovedEvent>().Count().ShouldBeGreaterThan(60);
+    }
 }

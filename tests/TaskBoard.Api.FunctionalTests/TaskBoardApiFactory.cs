@@ -12,6 +12,9 @@ namespace TaskBoard.Api.FunctionalTests;
 /// </summary>
 public sealed class TaskBoardApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    // Also used by tests that forge tokens, such as an already expired one.
+    public const string SigningKey = "functional-tests-signing-key-0123456789abcdef";
+
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
 
     // Uploaded files go to a throwaway folder instead of the API project's storage folder.
@@ -22,9 +25,12 @@ public sealed class TaskBoardApiFactory : WebApplicationFactory<Program>, IAsync
         // "Testing" skips the development-only migration step in Program.cs; InitializeAsync migrates instead.
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Database", _postgres.GetConnectionString());
-        builder.UseSetting("Jwt:SigningKey", "functional-tests-signing-key-0123456789abcdef");
+        builder.UseSetting("Jwt:SigningKey", SigningKey);
         builder.UseSetting("FileStorage:Provider", "Local");
         builder.UseSetting("FileStorage:LocalRootPath", _storagePath);
+
+        // Every test signs up its own users from the same address; the rate limit has its own test.
+        builder.UseSetting("RateLimiting:Auth:PermitLimit", "100000");
     }
 
     public async Task InitializeAsync()

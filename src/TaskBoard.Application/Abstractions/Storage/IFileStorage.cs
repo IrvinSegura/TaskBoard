@@ -8,4 +8,9 @@ public interface IFileStorage
     Task<Stream?> OpenReadAsync(string storageKey, CancellationToken cancellationToken);
 
     Task DeleteAsync(string storageKey, CancellationToken cancellationToken);
+
+    // Every stored file, used to find files left without an attachment row.
+    IAsyncEnumerable<StoredFile> ListAsync(CancellationToken cancellationToken);
 }
+
+public sealed record StoredFile(string StorageKey, DateTimeOffset LastModified);

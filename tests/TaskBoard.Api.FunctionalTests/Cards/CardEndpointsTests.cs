@@ -104,10 +104,66 @@ public class CardEndpointsTests(TaskBoardApiFactory factory) : IClassFixture<Tas
             .ShouldBe([done, todo, doing]);
     }
 
+    [Fact]
+    public async Task SearchCards_ReturnsPagesWithATotalCount()
+    {
+        var owner = await _api.CreateUserAsync();
+        var teamId = await _api.CreateTeamAsync(owner);
+        var boardId = await _api.CreateBoardAsync(owner, teamId);
+        var columnId = await _api.CreateColumnAsync(owner, boardId);
+        var cardIds = new List<Guid>();
+        foreach (var title in new[] { "A", "B", "C" })
+        {
+            cardIds.Add(await _api.CreateCardAsync(owner, columnId, title));
+        }
+
+        var secondPage = await owner.Client.GetFromJsonAsync<JsonElement>($"/boards/{boardId}/cards?page=2&pageSize=2");
+
+        secondPage.GetProperty("items").EnumerateArray().Select(c => c.GetProperty("id").GetGuid()).ShouldBe([cardIds[2]]);
+        secondPage.GetProperty("page").GetInt32().ShouldBe(2);
+        secondPage.GetProperty("totalCount").GetInt32().ShouldBe(3);
+        secondPage.GetProperty("hasNextPage").GetBoolean().ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task MoveCard_RepeatedlyBetweenTheSameNeighbours_KeepsTheOrderAfterRenumbering()
+    {
+        var owner = await _api.CreateUserAsync();
+        var teamId = await _api.CreateTeamAsync(owner);
+        var boardId = await _api.CreateBoardAsync(owner, teamId);
+        var columnId = await _api.CreateColumnAsync(owner, boardId);
+        var first = await _api.CreateCardAsync(owner, columnId, "First");
+        var last = await _api.CreateCardAsync(owner, columnId, "Last");
+        var a = await _api.CreateCardAsync(owner, columnId, "A");
+        var b = await _api.CreateCardAsync(owner, columnId, "B");
+
+        // Each move lands right after "First", in front of the card moved before it, halving the same gap
+        // every time. Well past the ~30 splits a gap allows, so the column has to be renumbered on the way.
+        var expected = new List<Guid> { first, last, a, b };
+        for (var i = 0; i < 60; i++)
+        {
+            var moving = i % 2 == 0 ? b : a;
+            var next = expected[1];
+            var move = await owner.Client.PatchAsJsonAsync(
+                $"/cards/{moving}/move", new { targetColumnId = columnId, previousCardId = first, nextCardId = next });
+            move.StatusCode.ShouldBe(HttpStatusCode.OK, await move.Content.ReadAsStringAsync());
+
+            expected.Remove(moving);
+            expected.Insert(1, moving);
+        }
+
+        var board = await owner.Client.GetFromJsonAsync<JsonElement>($"/boards/{boardId}");
+        var cards = board.GetProperty("columns")[0].GetProperty("cards").EnumerateArray().ToList();
+        cards.Select(c => c.GetProperty("id").GetGuid()).ShouldBe(expected);
+
+        var positions = cards.Select(c => c.GetProperty("position").GetDouble()).ToList();
+        positions.Zip(positions.Skip(1), (previous, next) => next - previous).ShouldAllBe(gap => gap > 0);
+    }
+
     private static async Task<List<Guid>> SearchAsync(TestUser user, Guid boardId, string queryString)
     {
         var cards = await user.Client.GetFromJsonAsync<JsonElement>($"/boards/{boardId}/cards?{queryString}");
-        return cards.EnumerateArray().Select(c => c.GetProperty("id").GetGuid()).ToList();
+        return cards.GetProperty("items").EnumerateArray().Select(c => c.GetProperty("id").GetGuid()).ToList();
     }
 
     private static async Task<List<Guid>> GetBoardCardIdsAsync(TestUser user, Guid boardId)

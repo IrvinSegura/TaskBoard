@@ -1,5 +1,6 @@
 using TaskBoard.Api.Extensions;
 using TaskBoard.Application.Abstractions.Messaging;
+using TaskBoard.Application.Common.Paging;
 using TaskBoard.Application.Features.Comments.AddComment;
 using TaskBoard.Application.Features.Comments.DeleteComment;
 using TaskBoard.Application.Features.Comments.EditComment;
@@ -15,10 +16,13 @@ internal sealed class CommentEndpoints : IEndpoint
 
         group.MapGet("/", async (
             Guid cardId,
-            IQueryHandler<GetCardCommentsQuery, IReadOnlyList<CommentResponse>> handler,
+            int? page,
+            int? pageSize,
+            IQueryHandler<GetCardCommentsQuery, PagedResponse<CommentResponse>> handler,
             CancellationToken cancellationToken) =>
         {
-            var result = await handler.Handle(new GetCardCommentsQuery(cardId), cancellationToken);
+            var query = new GetCardCommentsQuery(cardId, PageRequest.Create(page, pageSize));
+            var result = await handler.Handle(query, cancellationToken);
             return result.ToHttpResult();
         });
 

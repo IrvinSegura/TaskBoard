@@ -8,6 +8,7 @@ public interface IRealtimeNotifier
     // Every open connection of one user.
     IBoardClient User(Guid userId);
 
-    // Stops a user's open connections from receiving a board's events after losing access to it.
+    // After a user lost access to a board: sends BoardMemberRemoved to each of their open connections,
+    // then stops those connections from receiving the board's events.
     Task RemoveFromBoardAsync(Guid boardId, Guid userId, CancellationToken cancellationToken);
 }

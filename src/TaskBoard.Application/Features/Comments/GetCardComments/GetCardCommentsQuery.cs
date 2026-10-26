@@ -1,10 +1,13 @@
 using TaskBoard.Application.Abstractions.Authorization;
 using TaskBoard.Application.Abstractions.Messaging;
+using TaskBoard.Application.Common.Paging;
 using TaskBoard.Domain.Boards;
 
 namespace TaskBoard.Application.Features.Comments.GetCardComments;
 
-public sealed record GetCardCommentsQuery(Guid CardId) : IQuery<IReadOnlyList<CommentResponse>>, IBoardScopedRequest
+// Oldest first, so later pages hold the newer comments.
+public sealed record GetCardCommentsQuery(Guid CardId, PageRequest Page)
+    : IQuery<PagedResponse<CommentResponse>>, IBoardScopedRequest
 {
     BoardScope IBoardScopedRequest.Scope => BoardScope.Card;
 

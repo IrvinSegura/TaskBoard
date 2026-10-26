@@ -12,5 +12,8 @@ public interface ICardRepository
     // Position of a card only if it lives in the given column; used to place a moved card between neighbours.
     Task<double?> GetPositionInColumnAsync(Guid cardId, Guid columnId, CancellationToken cancellationToken);
 
+    // Every card of the column, archived ones included, ordered by position. Used to renumber the column.
+    Task<IReadOnlyList<Card>> GetColumnCardsAsync(Guid columnId, CancellationToken cancellationToken);
+
     void Add(Card card);
 }

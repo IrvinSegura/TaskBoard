@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using TaskBoard.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
@@ -11,9 +12,12 @@ public sealed class PostgresFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:17").Build();
 
-    public ApplicationDbContext CreateDbContext() =>
+    public string ConnectionString => _container.GetConnectionString();
+
+    public ApplicationDbContext CreateDbContext(params IInterceptor[] interceptors) =>
         new(new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseNpgsql(_container.GetConnectionString())
+            .UseNpgsql(ConnectionString)
+            .AddInterceptors(interceptors)
             .Options);
 
     public async Task InitializeAsync()

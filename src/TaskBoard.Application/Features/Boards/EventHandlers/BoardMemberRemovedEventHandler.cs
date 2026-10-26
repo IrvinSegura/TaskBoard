@@ -10,14 +10,16 @@ internal sealed class BoardMemberRemovedEventHandler(IRealtimeNotifier notifier,
 {
     public async Task Handle(BoardMemberRemovedEvent domainEvent, CancellationToken cancellationToken)
     {
-        // Sent before dropping the user so their own client also learns it was removed.
-        await notifier.Board(domainEvent.BoardId).BoardMemberRemoved(
-            new BoardMemberRemovedMessage(domainEvent.BoardId, domainEvent.UserId));
-
         // Team members keep read access to team-visible boards, so only drop users who lost all access.
+        // Dropping them first also sends them the notice directly, so on a single instance the group
+        // message below no longer reaches them twice.
         if (await boardAccess.GetRoleAsync(domainEvent.BoardId, domainEvent.UserId, cancellationToken) is null)
         {
             await notifier.RemoveFromBoardAsync(domainEvent.BoardId, domainEvent.UserId, cancellationToken);
         }
+
+        // The rest of the board updates its member list.
+        await notifier.Board(domainEvent.BoardId).BoardMemberRemoved(
+            new BoardMemberRemovedMessage(domainEvent.BoardId, domainEvent.UserId));
     }
 }
