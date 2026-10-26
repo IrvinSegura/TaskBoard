@@ -1,9 +1,12 @@
 using TaskBoard.Api.Extensions;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Features.Boards.AddBoardMember;
+using TaskBoard.Application.Features.Boards.ArchiveBoard;
 using TaskBoard.Application.Features.Boards.CreateBoard;
 using TaskBoard.Application.Features.Boards.GetBoardDetail;
 using TaskBoard.Application.Features.Boards.GetTeamBoards;
+using TaskBoard.Application.Features.Boards.RemoveBoardMember;
+using TaskBoard.Application.Features.Boards.RenameBoard;
 using TaskBoard.Domain.Boards;
 
 namespace TaskBoard.Api.Endpoints;
@@ -53,9 +56,40 @@ internal sealed class BoardEndpoints : IEndpoint
                 new AddBoardMemberCommand(boardId, request.UserId, request.Role), cancellationToken);
             return result.ToHttpResult();
         });
+
+        group.MapPatch("/boards/{boardId:guid}", async (
+            Guid boardId,
+            RenameBoardRequest request,
+            ICommandHandler<RenameBoardCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new RenameBoardCommand(boardId, request.Name), cancellationToken);
+            return result.ToHttpResult();
+        });
+
+        group.MapPost("/boards/{boardId:guid}/archive", async (
+            Guid boardId,
+            ICommandHandler<ArchiveBoardCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new ArchiveBoardCommand(boardId), cancellationToken);
+            return result.ToHttpResult();
+        });
+
+        group.MapDelete("/boards/{boardId:guid}/members/{userId:guid}", async (
+            Guid boardId,
+            Guid userId,
+            ICommandHandler<RemoveBoardMemberCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new RemoveBoardMemberCommand(boardId, userId), cancellationToken);
+            return result.ToHttpResult();
+        });
     }
 
     internal sealed record CreateBoardRequest(string Name, BoardVisibility Visibility);
+
+    internal sealed record RenameBoardRequest(string Name);
 
     internal sealed record AddBoardMemberRequest(Guid UserId, BoardRole Role);
 }
