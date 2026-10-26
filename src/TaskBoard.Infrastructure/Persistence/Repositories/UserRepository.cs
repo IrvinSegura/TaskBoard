@@ -6,6 +6,9 @@ namespace TaskBoard.Infrastructure.Persistence.Repositories;
 
 internal sealed class UserRepository(ApplicationDbContext db) : IUserRepository
 {
+    public Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken) =>
+        db.Users.SingleOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken)
     {
         var normalizedEmail = User.NormalizeEmail(email);
