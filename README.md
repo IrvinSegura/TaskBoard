@@ -7,10 +7,10 @@ A Kanban-style task board API built with ASP.NET Core. Teams own boards, boards 
 ## Features
 
 - **Auth**: registration and login with JWT access tokens.
-- **Teams**: create teams and add members with roles.
-- **Boards**: team boards with members, roles and visibility.
-- **Columns and cards**: create columns, create cards, move cards between columns and assign members.
-- **Comments and attachments**: comment on cards and upload files (local disk or Azure Blob Storage).
+- **Teams**: create teams, add and remove members, change roles and leave a team.
+- **Boards**: team boards with members, roles and visibility; rename and archive them.
+- **Columns and cards**: create and rename columns; create, edit, archive and move cards, and assign or unassign members.
+- **Comments and attachments**: add and edit comments on cards and upload files (local disk or Azure Blob Storage).
 - **Notifications**: personal notifications with read tracking.
 - **Real time**: board events and notifications pushed over SignalR.
 
@@ -103,16 +103,26 @@ All endpoints except `/auth/*` require a bearer token.
 | `GET` | `/teams` | List my teams. |
 | `POST` | `/teams` | Create a team. |
 | `POST` | `/teams/{teamId}/members` | Add a team member. |
+| `PATCH` | `/teams/{teamId}/members/{userId}` | Change a team member's role. |
+| `DELETE` | `/teams/{teamId}/members/{userId}` | Remove a team member, or leave the team with your own id. Also removes them from the team's boards. |
 | `GET` | `/teams/{teamId}/boards` | List a team's boards. |
 | `POST` | `/teams/{teamId}/boards` | Create a board. |
 | `GET` | `/boards/{boardId}` | Get a board with its columns and cards. |
+| `PATCH` | `/boards/{boardId}` | Rename a board. |
+| `POST` | `/boards/{boardId}/archive` | Archive a board. |
 | `POST` | `/boards/{boardId}/members` | Add a board member. |
+| `DELETE` | `/boards/{boardId}/members/{userId}` | Remove a board member. |
 | `POST` | `/boards/{boardId}/columns` | Create a column. |
+| `PATCH` | `/columns/{columnId}` | Rename a column. |
 | `POST` | `/columns/{columnId}/cards` | Create a card. |
+| `PUT` | `/cards/{cardId}` | Edit a card's title, description, priority and due date. |
 | `PATCH` | `/cards/{cardId}/move` | Move a card to a column and position. |
+| `POST` | `/cards/{cardId}/archive` | Archive a card. |
 | `POST` | `/cards/{cardId}/assignees` | Assign a member to a card. |
+| `DELETE` | `/cards/{cardId}/assignees/{userId}` | Unassign a member from a card. |
 | `GET` | `/cards/{cardId}/comments` | List a card's comments. |
 | `POST` | `/cards/{cardId}/comments` | Add a comment. |
+| `PATCH` | `/comments/{commentId}` | Edit your own comment. |
 | `POST` | `/cards/{cardId}/attachments` | Upload an attachment (multipart, max 10 MB). |
 | `GET` | `/attachments/{attachmentId}` | Download an attachment. |
 | `GET` | `/notifications` | List my notifications. |
@@ -123,7 +133,8 @@ All endpoints except `/auth/*` require a bearer token.
 Connect to the SignalR hub at `/hubs/board`. Browsers send the token in the `access_token` query string.
 
 - Call `JoinBoard(boardId)` when opening a board and `LeaveBoard(boardId)` when leaving it. Only board members can join.
-- Board events: `ColumnCreated`, `CardCreated`, `CardMoved`, `CardAssigned`, `CommentAdded`, `AttachmentAdded`.
+- Board events: `BoardRenamed`, `BoardArchived`, `BoardMemberRemoved`, `ColumnCreated`, `ColumnRenamed`, `CardCreated`, `CardUpdated`, `CardMoved`, `CardArchived`, `CardAssigned`, `CardUnassigned`, `CommentAdded`, `CommentEdited`, `AttachmentAdded`.
+- When a client receives `BoardMemberRemoved` with its own user id, it should call `LeaveBoard` and close the board.
 - Personal events: `NotificationReceived`, delivered to every connection of the user without joining a board.
 
 ## Tests

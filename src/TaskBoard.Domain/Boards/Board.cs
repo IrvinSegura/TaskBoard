@@ -39,10 +39,20 @@ public sealed class Board : AggregateRoot
         }
 
         Name = name.Trim();
+        Raise(new BoardRenamedEvent(Id, Name));
         return Result.Success();
     }
 
-    public void Archive() => IsArchived = true;
+    public void Archive()
+    {
+        if (IsArchived)
+        {
+            return;
+        }
+
+        IsArchived = true;
+        Raise(new BoardArchivedEvent(Id));
+    }
 
     public Result AddMember(Guid userId, BoardRole role)
     {
@@ -75,6 +85,7 @@ public sealed class Board : AggregateRoot
         }
 
         _members.Remove(member);
+        Raise(new BoardMemberRemovedEvent(Id, userId));
         return Result.Success();
     }
 
@@ -95,6 +106,11 @@ public sealed class Board : AggregateRoot
 
     public Result RenameColumn(Guid columnId, string name)
     {
+        if (IsArchived)
+        {
+            return BoardErrors.Archived;
+        }
+
         var column = _columns.SingleOrDefault(c => c.Id == columnId);
         if (column is null)
         {
@@ -102,6 +118,7 @@ public sealed class Board : AggregateRoot
         }
 
         column.Rename(name.Trim());
+        Raise(new ColumnRenamedEvent(Id, column.Id, column.Name));
         return Result.Success();
     }
 }
