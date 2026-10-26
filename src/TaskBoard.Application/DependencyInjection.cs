@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Behaviors;
+using TaskBoard.Application.Features.Auth;
 using TaskBoard.Application.Features.Notifications;
 
 namespace TaskBoard.Application;
@@ -39,6 +40,7 @@ public static class DependencyInjection
 
         services.AddScoped<BoardAuthorizer>();
         services.AddScoped<NotificationPublisher>();
+        services.AddScoped<AuthTokenService>();
 
         return services;
     }
