@@ -15,5 +15,7 @@ public interface IBoardRepository
         Guid userId,
         CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<Guid>> GetTeamBoardIdsAsync(Guid teamId, CancellationToken cancellationToken);
+
     void Add(Board board);
 }

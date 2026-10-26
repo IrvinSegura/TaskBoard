@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddSignalR()
             .AddJsonProtocol(options => options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
         services.AddSingleton<IUserIdProvider, SubjectUserIdProvider>();
+        services.AddSingleton<UserConnectionTracker>();
         services.AddSingleton<IRealtimeNotifier, SignalRRealtimeNotifier>();
 
         // Leave room above the file limit for the multipart envelope.

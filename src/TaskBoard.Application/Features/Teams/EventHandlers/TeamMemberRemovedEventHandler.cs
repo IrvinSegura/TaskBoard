@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
+using TaskBoard.Application.Abstractions.Authorization;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Abstractions.Persistence;
+using TaskBoard.Application.Abstractions.Realtime;
 using TaskBoard.Domain.Teams.Events;
 
 namespace TaskBoard.Application.Features.Teams.EventHandlers;
@@ -12,6 +14,8 @@ namespace TaskBoard.Application.Features.Teams.EventHandlers;
 internal sealed class TeamMemberRemovedEventHandler(
     IBoardRepository boards,
     IUnitOfWork unitOfWork,
+    IBoardAccessService boardAccess,
+    IRealtimeNotifier notifier,
     ILogger<TeamMemberRemovedEventHandler> logger)
     : IDomainEventHandler<TeamMemberRemovedEvent>
 {
@@ -37,5 +41,17 @@ internal sealed class TeamMemberRemovedEventHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Team-visible boards were readable through team membership alone, with no member row to remove,
+        // so drop the user's live connections from every team board they can no longer see.
+        var teamBoardIds = await boards.GetTeamBoardIdsAsync(domainEvent.TeamId, cancellationToken);
+
+        foreach (var boardId in teamBoardIds)
+        {
+            if (await boardAccess.GetRoleAsync(boardId, domainEvent.UserId, cancellationToken) is null)
+            {
+                await notifier.RemoveFromBoardAsync(boardId, domainEvent.UserId, cancellationToken);
+            }
+        }
     }
 }

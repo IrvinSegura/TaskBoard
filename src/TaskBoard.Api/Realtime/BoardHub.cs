@@ -10,8 +10,28 @@ namespace TaskBoard.Api.Realtime;
 /// Personal notifications reach every connection of the user without joining anything.
 /// </summary>
 [Authorize]
-public sealed class BoardHub(IBoardAccessService boardAccess) : Hub<IBoardClient>
+public sealed class BoardHub(IBoardAccessService boardAccess, UserConnectionTracker connections) : Hub<IBoardClient>
 {
+    public override Task OnConnectedAsync()
+    {
+        if (Guid.TryParse(Context.UserIdentifier, out var userId))
+        {
+            connections.Add(userId, Context.ConnectionId);
+        }
+
+        return base.OnConnectedAsync();
+    }
+
+    public override Task OnDisconnectedAsync(Exception? exception)
+    {
+        if (Guid.TryParse(Context.UserIdentifier, out var userId))
+        {
+            connections.Remove(userId, Context.ConnectionId);
+        }
+
+        return base.OnDisconnectedAsync(exception);
+    }
+
     public async Task JoinBoard(Guid boardId)
     {
         if (!Guid.TryParse(Context.UserIdentifier, out var userId))
@@ -31,6 +51,4 @@ public sealed class BoardHub(IBoardAccessService boardAccess) : Hub<IBoardClient
 
     public Task LeaveBoard(Guid boardId) =>
         Groups.RemoveFromGroupAsync(Context.ConnectionId, HubGroups.Board(boardId), Context.ConnectionAborted);
-
-    // TODO: when a member is removed from a board, also remove their connections from its group.
 }
