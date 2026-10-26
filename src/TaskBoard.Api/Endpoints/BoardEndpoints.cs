@@ -7,6 +7,7 @@ using TaskBoard.Application.Features.Boards.GetBoardDetail;
 using TaskBoard.Application.Features.Boards.GetTeamBoards;
 using TaskBoard.Application.Features.Boards.RemoveBoardMember;
 using TaskBoard.Application.Features.Boards.RenameBoard;
+using TaskBoard.Application.Features.Boards.RestoreBoard;
 using TaskBoard.Domain.Boards;
 
 namespace TaskBoard.Api.Endpoints;
@@ -19,10 +20,11 @@ internal sealed class BoardEndpoints : IEndpoint
 
         group.MapGet("/teams/{teamId:guid}/boards", async (
             Guid teamId,
+            bool? archived,
             IQueryHandler<GetTeamBoardsQuery, IReadOnlyList<BoardSummaryResponse>> handler,
             CancellationToken cancellationToken) =>
         {
-            var result = await handler.Handle(new GetTeamBoardsQuery(teamId), cancellationToken);
+            var result = await handler.Handle(new GetTeamBoardsQuery(teamId, archived ?? false), cancellationToken);
             return result.ToHttpResult();
         });
 
@@ -73,6 +75,15 @@ internal sealed class BoardEndpoints : IEndpoint
             CancellationToken cancellationToken) =>
         {
             var result = await handler.Handle(new ArchiveBoardCommand(boardId), cancellationToken);
+            return result.ToHttpResult();
+        });
+
+        group.MapPost("/boards/{boardId:guid}/restore", async (
+            Guid boardId,
+            ICommandHandler<RestoreBoardCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new RestoreBoardCommand(boardId), cancellationToken);
             return result.ToHttpResult();
         });
 

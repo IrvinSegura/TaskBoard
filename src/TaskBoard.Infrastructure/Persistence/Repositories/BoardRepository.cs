@@ -25,5 +25,11 @@ internal sealed class BoardRepository(ApplicationDbContext db) : IBoardRepositor
             .Where(b => b.TeamId == teamId && b.Members.Any(m => m.UserId == userId))
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<Guid>> GetTeamBoardIdsAsync(Guid teamId, CancellationToken cancellationToken) =>
+        await db.Boards
+            .Where(b => b.TeamId == teamId)
+            .Select(b => b.Id)
+            .ToListAsync(cancellationToken);
+
     public void Add(Board board) => db.Boards.Add(board);
 }

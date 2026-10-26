@@ -26,7 +26,7 @@ internal sealed class GetTeamBoardsQueryHandler(IReadDbContext db, ICurrentUser 
 
         // Same visibility rule as BoardAccessService: team-visible boards, or private ones the user belongs to.
         var boards = await db.Boards
-            .Where(b => b.TeamId == query.TeamId && !b.IsArchived)
+            .Where(b => b.TeamId == query.TeamId && b.IsArchived == query.Archived)
             .Where(b => b.Visibility == BoardVisibility.Team || b.Members.Any(m => m.UserId == userId))
             .OrderBy(b => b.Name)
             .Select(b => new BoardSummaryResponse(b.Id, b.Name, b.Visibility))

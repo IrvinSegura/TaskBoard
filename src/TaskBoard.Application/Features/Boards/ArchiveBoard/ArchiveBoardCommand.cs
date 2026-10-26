@@ -11,4 +11,6 @@ public sealed record ArchiveBoardCommand(Guid BoardId) : ICommand, IBoardScopedR
     Guid IBoardScopedRequest.ScopeId => BoardId;
 
     BoardRole IBoardScopedRequest.MinimumRole => BoardRole.Admin;
+
+    bool IBoardScopedRequest.AllowsArchivedBoard => true;
 }

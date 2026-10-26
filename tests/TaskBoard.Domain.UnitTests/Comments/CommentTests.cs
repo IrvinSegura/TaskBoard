@@ -29,4 +29,37 @@ public class CommentTests
         result.Error.ShouldBe(CommentErrors.NotAuthor);
         comment.Body.ShouldBe("First draft");
     }
+
+    [Fact]
+    public void Delete_ByAuthor_RaisesCommentDeletedEvent()
+    {
+        var authorId = Guid.NewGuid();
+        var comment = Comment.Create(Guid.NewGuid(), Guid.NewGuid(), authorId, "Body");
+
+        var result = comment.Delete(authorId, actorIsBoardAdmin: false);
+
+        result.IsSuccess.ShouldBeTrue();
+        comment.DomainEvents.OfType<CommentDeletedEvent>().ShouldHaveSingleItem().CommentId.ShouldBe(comment.Id);
+    }
+
+    [Fact]
+    public void Delete_ByBoardAdminWhoIsNotTheAuthor_IsAllowed()
+    {
+        var comment = Comment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Body");
+
+        var result = comment.Delete(Guid.NewGuid(), actorIsBoardAdmin: true);
+
+        result.IsSuccess.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Delete_ByAnotherNonAdminUser_ReturnsCannotDelete()
+    {
+        var comment = Comment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Body");
+
+        var result = comment.Delete(Guid.NewGuid(), actorIsBoardAdmin: false);
+
+        result.Error.ShouldBe(CommentErrors.CannotDelete);
+        comment.DomainEvents.OfType<CommentDeletedEvent>().ShouldBeEmpty();
+    }
 }

@@ -48,4 +48,16 @@ public sealed class Comment : AggregateRoot
         Raise(new CommentEditedEvent(Id, CardId, BoardId, Body));
         return Result.Success();
     }
+
+    // Checks the rule and raises the event; the caller removes the comment from its repository.
+    public Result Delete(Guid actorId, bool actorIsBoardAdmin)
+    {
+        if (actorId != AuthorId && !actorIsBoardAdmin)
+        {
+            return CommentErrors.CannotDelete;
+        }
+
+        Raise(new CommentDeletedEvent(Id, CardId, BoardId));
+        return Result.Success();
+    }
 }

@@ -1,6 +1,7 @@
 using TaskBoard.Application.Abstractions.Authentication;
 using TaskBoard.Application.Abstractions.Authorization;
 using TaskBoard.Application.Abstractions.Messaging;
+using TaskBoard.Domain.Boards;
 using TaskBoard.Domain.Common;
 
 namespace TaskBoard.Application.Behaviors;
@@ -17,7 +18,7 @@ internal static class BoardAuthorizationDecorator
     {
         public async Task<Result> Handle(TCommand command, CancellationToken cancellationToken)
         {
-            var error = await authorizer.AuthorizeAsync(command, cancellationToken);
+            var error = await authorizer.AuthorizeAsync(command, isWrite: true, cancellationToken);
             return error is null ? await inner.Handle(command, cancellationToken) : Result.Failure(error);
         }
     }
@@ -30,7 +31,7 @@ internal static class BoardAuthorizationDecorator
     {
         public async Task<Result<TResponse>> Handle(TCommand command, CancellationToken cancellationToken)
         {
-            var error = await authorizer.AuthorizeAsync(command, cancellationToken);
+            var error = await authorizer.AuthorizeAsync(command, isWrite: true, cancellationToken);
             return error is null ? await inner.Handle(command, cancellationToken) : Result.Failure<TResponse>(error);
         }
     }
@@ -41,7 +42,7 @@ internal static class BoardAuthorizationDecorator
     {
         public async Task<Result<TResponse>> Handle(TQuery query, CancellationToken cancellationToken)
         {
-            var error = await authorizer.AuthorizeAsync(query, cancellationToken);
+            var error = await authorizer.AuthorizeAsync(query, isWrite: false, cancellationToken);
             return error is null ? await inner.Handle(query, cancellationToken) : Result.Failure<TResponse>(error);
         }
     }
@@ -49,7 +50,7 @@ internal static class BoardAuthorizationDecorator
 
 internal sealed class BoardAuthorizer(IBoardAccessService boardAccess, ICurrentUser currentUser)
 {
-    public async Task<Error?> AuthorizeAsync(object request, CancellationToken cancellationToken)
+    public async Task<Error?> AuthorizeAsync(object request, bool isWrite, CancellationToken cancellationToken)
     {
         if (request is not IBoardScopedRequest scoped)
         {
@@ -68,6 +69,18 @@ internal sealed class BoardAuthorizer(IBoardAccessService boardAccess, ICurrentU
             return AuthorizationErrors.ResourceNotFound;
         }
 
-        return role.Value < scoped.MinimumRole ? AuthorizationErrors.InsufficientRole : null;
+        if (role.Value < scoped.MinimumRole)
+        {
+            return AuthorizationErrors.InsufficientRole;
+        }
+
+        // Checked after membership so non-members still get a plain not found.
+        if (isWrite && !scoped.AllowsArchivedBoard &&
+            await boardAccess.IsArchivedAsync(boardId.Value, cancellationToken))
+        {
+            return BoardErrors.Archived;
+        }
+
+        return null;
     }
 }

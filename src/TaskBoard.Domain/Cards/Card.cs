@@ -130,4 +130,16 @@ public sealed class Card : AggregateRoot
         IsArchived = true;
         Raise(new CardArchivedEvent(Id, BoardId));
     }
+
+    // Returns to the column and position it had when archived.
+    public void Restore()
+    {
+        if (!IsArchived)
+        {
+            return;
+        }
+
+        IsArchived = false;
+        Raise(new CardRestoredEvent(Id, BoardId, ColumnId, Title, Position));
+    }
 }

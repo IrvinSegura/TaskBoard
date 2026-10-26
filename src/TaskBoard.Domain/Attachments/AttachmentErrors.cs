@@ -13,6 +13,9 @@ public static class AttachmentErrors
     public static readonly Error FileMissing =
         Error.NotFound("Attachments.FileMissing", "The stored file could not be found.");
 
+    public static readonly Error CannotDelete =
+        Error.Forbidden("Attachments.CannotDelete", "Only the uploader or a board admin can delete this attachment.");
+
     public static Error NotFound(Guid attachmentId) =>
         Error.NotFound("Attachments.NotFound", $"Attachment '{attachmentId}' was not found.");
 }

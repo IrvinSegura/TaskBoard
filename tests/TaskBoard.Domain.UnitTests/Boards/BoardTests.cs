@@ -91,6 +91,80 @@ public class BoardTests
     }
 
     [Fact]
+    public void MoveColumn_BetweenNeighbours_PlacesItBetweenThemAndRaisesColumnMovedEvent()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);
+        var todo = board.AddColumn("To do").Value;
+        var doing = board.AddColumn("Doing").Value;
+        var done = board.AddColumn("Done").Value;
+
+        var result = board.MoveColumn(done.Id, todo.Id, doing.Id);
+
+        result.IsSuccess.ShouldBeTrue();
+        done.Position.ShouldBeGreaterThan(todo.Position);
+        done.Position.ShouldBeLessThan(doing.Position);
+        board.DomainEvents.OfType<ColumnMovedEvent>().ShouldHaveSingleItem().ColumnId.ShouldBe(done.Id);
+    }
+
+    [Fact]
+    public void MoveColumn_NeighbourFromAnotherBoard_ReturnsInvalidColumnNeighbour()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);
+        var column = board.AddColumn("To do").Value;
+        var otherBoard = Board.Create(Guid.NewGuid(), "Other", Guid.NewGuid(), BoardVisibility.Private);
+        var foreignColumn = otherBoard.AddColumn("Elsewhere").Value;
+
+        var result = board.MoveColumn(column.Id, foreignColumn.Id, null);
+
+        result.Error.ShouldBe(BoardErrors.InvalidColumnNeighbour);
+    }
+
+    [Fact]
+    public void MoveColumn_NextToItself_ReturnsInvalidColumnNeighbour()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);
+        var column = board.AddColumn("To do").Value;
+
+        var result = board.MoveColumn(column.Id, column.Id, null);
+
+        result.Error.ShouldBe(BoardErrors.InvalidColumnNeighbour);
+    }
+
+    [Fact]
+    public void MoveColumn_ArchivedBoard_ReturnsArchived()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);
+        var column = board.AddColumn("To do").Value;
+        board.Archive();
+
+        var result = board.MoveColumn(column.Id, null, null);
+
+        result.Error.ShouldBe(BoardErrors.Archived);
+    }
+
+    [Fact]
+    public void Restore_ArchivedBoard_ReactivatesItAndRaisesBoardRestoredEvent()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);
+        board.Archive();
+
+        board.Restore();
+
+        board.IsArchived.ShouldBeFalse();
+        board.DomainEvents.OfType<BoardRestoredEvent>().ShouldHaveSingleItem();
+    }
+
+    [Fact]
+    public void Restore_ActiveBoard_RaisesNoEvent()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);
+
+        board.Restore();
+
+        board.DomainEvents.OfType<BoardRestoredEvent>().ShouldBeEmpty();
+    }
+
+    [Fact]
     public void AddColumn_AppendsAfterLastColumn()
     {
         var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);

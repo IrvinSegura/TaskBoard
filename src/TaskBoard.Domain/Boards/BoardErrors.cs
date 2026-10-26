@@ -16,6 +16,9 @@ public static class BoardErrors
     public static readonly Error LastAdmin =
         Error.Failure("Boards.LastAdmin", "A board must keep at least one admin.");
 
+    public static readonly Error InvalidColumnNeighbour =
+        Error.Validation("Boards.InvalidColumnNeighbour", "Neighbouring columns must be other columns of the same board.");
+
     public static readonly Error UserNotInTeam =
         Error.Validation("Boards.UserNotInTeam", "Only members of the board team can be added.");
 

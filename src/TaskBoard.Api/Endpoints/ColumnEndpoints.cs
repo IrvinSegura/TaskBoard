@@ -1,6 +1,7 @@
 using TaskBoard.Api.Extensions;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Features.Columns.CreateColumn;
+using TaskBoard.Application.Features.Columns.MoveColumn;
 using TaskBoard.Application.Features.Columns.RenameColumn;
 
 namespace TaskBoard.Api.Endpoints;
@@ -30,9 +31,22 @@ internal sealed class ColumnEndpoints : IEndpoint
             var result = await handler.Handle(new RenameColumnCommand(columnId, request.Name), cancellationToken);
             return result.ToHttpResult();
         });
+
+        group.MapPatch("/columns/{columnId:guid}/move", async (
+            Guid columnId,
+            MoveColumnRequest request,
+            ICommandHandler<MoveColumnCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var command = new MoveColumnCommand(columnId, request.PreviousColumnId, request.NextColumnId);
+            var result = await handler.Handle(command, cancellationToken);
+            return result.ToHttpResult();
+        });
     }
 
     internal sealed record CreateColumnRequest(string Name);
 
     internal sealed record RenameColumnRequest(string Name);
+
+    internal sealed record MoveColumnRequest(Guid? PreviousColumnId, Guid? NextColumnId);
 }

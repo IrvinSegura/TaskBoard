@@ -1,5 +1,6 @@
 using TaskBoard.Api.Extensions;
 using TaskBoard.Application.Abstractions.Messaging;
+using TaskBoard.Application.Features.Attachments.DeleteAttachment;
 using TaskBoard.Application.Features.Attachments.DownloadAttachment;
 using TaskBoard.Application.Features.Attachments.UploadAttachment;
 
@@ -36,6 +37,15 @@ internal sealed class AttachmentEndpoints : IEndpoint
 
             // Sent as a download (Content-Disposition: attachment) so the browser never renders it inline.
             return result.ToHttpResult(file => Results.File(file.Content, file.ContentType, file.FileName));
+        });
+
+        group.MapDelete("/attachments/{attachmentId:guid}", async (
+            Guid attachmentId,
+            ICommandHandler<DeleteAttachmentCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new DeleteAttachmentCommand(attachmentId), cancellationToken);
+            return result.ToHttpResult();
         });
     }
 }
