@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -39,4 +40,21 @@ internal sealed class AzureBlobFileStorage(BlobServiceClient blobServiceClient, 
 
     public Task DeleteAsync(string storageKey, CancellationToken cancellationToken) =>
         Container.GetBlobClient(storageKey).DeleteIfExistsAsync(cancellationToken: cancellationToken);
+
+    public async IAsyncEnumerable<StoredFile> ListAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var container = Container;
+
+        // Created on the first upload, so a missing container just means there are no files yet.
+        if (!await container.ExistsAsync(cancellationToken))
+        {
+            yield break;
+        }
+
+        await foreach (var blob in container.GetBlobsAsync(cancellationToken: cancellationToken))
+        {
+            // Without a timestamp the file's age is unknown, so it is never treated as old enough to delete.
+            yield return new StoredFile(blob.Name, blob.Properties.LastModified ?? DateTimeOffset.MaxValue);
+        }
+    }
 }

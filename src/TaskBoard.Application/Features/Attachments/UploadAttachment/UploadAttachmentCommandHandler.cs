@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using TaskBoard.Application.Abstractions.Authentication;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Abstractions.Persistence;
@@ -13,7 +14,8 @@ internal sealed class UploadAttachmentCommandHandler(
     IAttachmentRepository attachments,
     IFileStorage fileStorage,
     ICurrentUser currentUser,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ILogger<UploadAttachmentCommandHandler> logger)
     : ICommandHandler<UploadAttachmentCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(UploadAttachmentCommand command, CancellationToken cancellationToken)
@@ -38,7 +40,6 @@ internal sealed class UploadAttachmentCommandHandler(
             return AttachmentErrors.ContentMismatch;
         }
 
-        // TODO: if SaveChanges fails the uploaded file is orphaned; add a cleanup job.
         var storageKey = await fileStorage.UploadAsync(command.Content, contentType, cancellationToken);
 
         var attachment = Attachment.Create(
@@ -51,8 +52,31 @@ internal sealed class UploadAttachmentCommandHandler(
             storageKey);
 
         attachments.Add(attachment);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            // No row points to the file, so remove it now. If even this fails (or the process dies before
+            // reaching it), the orphaned file cleanup job deletes it later.
+            await TryDeleteFileAsync(storageKey);
+            throw;
+        }
 
         return attachment.Id;
+    }
+
+    private async Task TryDeleteFileAsync(string storageKey)
+    {
+        try
+        {
+            await fileStorage.DeleteAsync(storageKey, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Could not delete file {StorageKey} after its attachment failed to save", storageKey);
+        }
     }
 }
