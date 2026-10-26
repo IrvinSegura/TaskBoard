@@ -1,17 +1,14 @@
-using Microsoft.EntityFrameworkCore;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Abstractions.Persistence;
+using TaskBoard.Application.Common.Paging;
 using TaskBoard.Domain.Common;
 
 namespace TaskBoard.Application.Features.Cards.SearchCards;
 
 internal sealed class SearchCardsQueryHandler(IReadDbContext db)
-    : IQueryHandler<SearchCardsQuery, IReadOnlyList<CardSearchResultResponse>>
+    : IQueryHandler<SearchCardsQuery, PagedResponse<CardSearchResultResponse>>
 {
-    // Caps one response; add paging if boards outgrow it.
-    private const int MaxResults = 200;
-
-    public async Task<Result<IReadOnlyList<CardSearchResultResponse>>> Handle(
+    public async Task<Result<PagedResponse<CardSearchResultResponse>>> Handle(
         SearchCardsQuery query,
         CancellationToken cancellationToken)
     {
@@ -49,7 +46,7 @@ internal sealed class SearchCardsQueryHandler(IReadDbContext db)
             .OrderBy(c => c.DueDate == null)
             .ThenBy(c => c.DueDate)
             .ThenBy(c => c.Title)
-            .Take(MaxResults)
+            .ThenBy(c => c.Id)
             .Select(c => new CardSearchResultResponse(
                 c.Id,
                 c.ColumnId,
@@ -58,8 +55,8 @@ internal sealed class SearchCardsQueryHandler(IReadDbContext db)
                 c.DueDate,
                 c.IsArchived,
                 c.Assignments.Select(a => a.UserId).ToList()))
-            .ToListAsync(cancellationToken);
+            .ToPagedResponseAsync(query.Page, cancellationToken);
 
-        return Result.Success<IReadOnlyList<CardSearchResultResponse>>(results);
+        return results;
     }
 }

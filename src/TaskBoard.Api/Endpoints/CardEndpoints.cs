@@ -1,5 +1,6 @@
 using TaskBoard.Api.Extensions;
 using TaskBoard.Application.Abstractions.Messaging;
+using TaskBoard.Application.Common.Paging;
 using TaskBoard.Application.Features.Cards.ArchiveCard;
 using TaskBoard.Application.Features.Cards.AssignCardMember;
 using TaskBoard.Application.Features.Cards.CreateCard;
@@ -31,7 +32,7 @@ internal sealed class CardEndpoints : IEndpoint
         group.MapGet("/boards/{boardId:guid}/cards", async (
             Guid boardId,
             [AsParameters] SearchCardsRequest request,
-            IQueryHandler<SearchCardsQuery, IReadOnlyList<CardSearchResultResponse>> handler,
+            IQueryHandler<SearchCardsQuery, PagedResponse<CardSearchResultResponse>> handler,
             CancellationToken cancellationToken) =>
         {
             var query = new SearchCardsQuery(
@@ -41,7 +42,8 @@ internal sealed class CardEndpoints : IEndpoint
                 request.AssigneeId,
                 request.Priority,
                 request.DueBefore,
-                request.Archived ?? false);
+                request.Archived ?? false,
+                PageRequest.Create(request.Page, request.PageSize));
             var result = await handler.Handle(query, cancellationToken);
             return result.ToHttpResult();
         });
@@ -119,14 +121,16 @@ internal sealed class CardEndpoints : IEndpoint
         });
     }
 
-    // Bound from the query string, e.g. /boards/{id}/cards?text=login&priority=High&archived=true.
+    // Bound from the query string, e.g. /boards/{id}/cards?text=login&priority=High&archived=true&page=2.
     internal sealed record SearchCardsRequest(
         string? Text,
         Guid? ColumnId,
         Guid? AssigneeId,
         CardPriority? Priority,
         DateTimeOffset? DueBefore,
-        bool? Archived);
+        bool? Archived,
+        int? Page,
+        int? PageSize);
 
     internal sealed record CreateCardRequest(string Title, string? Description);
 
