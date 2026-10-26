@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace TaskBoard.Api.FunctionalTests;
 
-public sealed record TestUser(Guid Id, HttpClient Client);
+public sealed record TestUser(Guid Id, string Email, HttpClient Client);
 
 /// <summary>
 /// Sets up users, teams and boards through the public API, so tests only state what they check.
@@ -27,7 +27,7 @@ public sealed class ApiDriver(TaskBoardApiFactory factory)
 
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return new TestUser(userId, client);
+        return new TestUser(userId, email, client);
     }
 
     public async Task<Guid> CreateTeamAsync(TestUser owner, params TestUser[] members)
@@ -37,7 +37,7 @@ public sealed class ApiDriver(TaskBoardApiFactory factory)
         foreach (var member in members)
         {
             var response = await owner.Client.PostAsJsonAsync(
-                $"/teams/{teamId}/members", new { userId = member.Id, role = "Member" });
+                $"/teams/{teamId}/members", new { email = member.Email, role = "Member" });
             response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
         }
 
