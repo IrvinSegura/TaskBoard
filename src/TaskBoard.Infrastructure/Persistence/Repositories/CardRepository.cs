@@ -22,5 +22,11 @@ internal sealed class CardRepository(ApplicationDbContext db) : ICardRepository
             .Select(c => (double?)c.Position)
             .SingleOrDefaultAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<Card>> GetColumnCardsAsync(Guid columnId, CancellationToken cancellationToken) =>
+        await db.Cards
+            .Where(c => c.ColumnId == columnId)
+            .OrderBy(c => c.Position)
+            .ToListAsync(cancellationToken);
+
     public void Add(Card card) => db.Cards.Add(card);
 }

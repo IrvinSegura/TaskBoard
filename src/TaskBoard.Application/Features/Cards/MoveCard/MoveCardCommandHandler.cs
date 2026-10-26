@@ -33,6 +33,11 @@ internal sealed class MoveCardCommandHandler(
             ? await cards.GetPositionInColumnAsync(nextId, column.Id, cancellationToken)
             : null;
 
+        if (PositionCalculator.NeedsRebalance(previous, next))
+        {
+            (previous, next) = await RenumberColumnAsync(card, command, cancellationToken);
+        }
+
         var result = card.MoveTo(column.Id, PositionCalculator.Between(previous, next));
         if (result.IsFailure)
         {
@@ -41,5 +46,26 @@ internal sealed class MoveCardCommandHandler(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return new CardMovedResponse(card.Id, card.ColumnId, card.Position);
+    }
+
+    // The neighbours are too close to split again: spread the target column's other cards evenly,
+    // keeping their order, and return the neighbours' new positions. Saved together with the move.
+    private async Task<(double? Previous, double? Next)> RenumberColumnAsync(
+        Card movingCard,
+        MoveCardCommand command,
+        CancellationToken cancellationToken)
+    {
+        var columnCards = (await cards.GetColumnCardsAsync(command.TargetColumnId, cancellationToken))
+            .Where(c => c.Id != movingCard.Id)
+            .ToList();
+
+        for (var i = 0; i < columnCards.Count; i++)
+        {
+            columnCards[i].Reposition(PositionCalculator.Sequential(i));
+        }
+
+        return (
+            columnCards.SingleOrDefault(c => c.Id == command.PreviousCardId)?.Position,
+            columnCards.SingleOrDefault(c => c.Id == command.NextCardId)?.Position);
     }
 }
