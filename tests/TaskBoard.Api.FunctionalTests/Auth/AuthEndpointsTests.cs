@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.IdentityModel.Tokens;
+using TaskBoard.Api.Authentication;
 
 namespace TaskBoard.Api.FunctionalTests.Auth;
 
@@ -19,7 +20,8 @@ public class AuthEndpointsTests(TaskBoardApiFactory factory) : IClassFixture<Tas
 {
     private const string Password = "Passw0rd!Passw0rd";
 
-    private readonly HttpClient _anonymous = factory.CreateClient();
+    // Cookies are sent and read by hand, so every test states exactly which refresh token it uses.
+    private readonly HttpClient _anonymous = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
 
     [Fact]
     public async Task Login_WithWrongPassword_ReturnsUnauthorized()
@@ -86,7 +88,7 @@ public class AuthEndpointsTests(TaskBoardApiFactory factory) : IClassFixture<Tas
     {
         var tokens = await LoginAsync(await RegisterAsync());
 
-        var refresh = await _anonymous.PostAsJsonAsync("/auth/refresh", new { refreshToken = tokens.RefreshToken });
+        var refresh = await RefreshAsync(tokens.RefreshToken);
         refresh.StatusCode.ShouldBe(HttpStatusCode.OK);
         var renewed = await ReadTokensAsync(refresh);
 
@@ -94,7 +96,7 @@ public class AuthEndpointsTests(TaskBoardApiFactory factory) : IClassFixture<Tas
         (await GetMeAsync(renewed.AccessToken)).GetProperty("id").GetGuid().ShouldNotBe(Guid.Empty);
 
         // The renewed token works once more; the original one is spent.
-        (await _anonymous.PostAsJsonAsync("/auth/refresh", new { refreshToken = renewed.RefreshToken }))
+        (await RefreshAsync(renewed.RefreshToken))
             .StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
@@ -105,24 +107,53 @@ public class AuthEndpointsTests(TaskBoardApiFactory factory) : IClassFixture<Tas
         var laptop = await LoginAsync(email);
         var phone = await LoginAsync(email);
         var renewedLaptop = await ReadTokensAsync(
-            await _anonymous.PostAsJsonAsync("/auth/refresh", new { refreshToken = laptop.RefreshToken }));
+            await RefreshAsync(laptop.RefreshToken));
 
-        var reuse = await _anonymous.PostAsJsonAsync("/auth/refresh", new { refreshToken = laptop.RefreshToken });
+        var reuse = await RefreshAsync(laptop.RefreshToken);
 
         reuse.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
         (await ApiDriver.ReadErrorCodeAsync(reuse)).ShouldBe("Users.InvalidRefreshToken");
-        (await _anonymous.PostAsJsonAsync("/auth/refresh", new { refreshToken = renewedLaptop.RefreshToken }))
+        (await RefreshAsync(renewedLaptop.RefreshToken))
             .StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-        (await _anonymous.PostAsJsonAsync("/auth/refresh", new { refreshToken = phone.RefreshToken }))
+        (await RefreshAsync(phone.RefreshToken))
             .StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
-    public async Task Refresh_WithUnknownToken_ReturnsUnauthorized()
+    public async Task Refresh_WithUnknownToken_ReturnsUnauthorizedAndClearsTheCookie()
     {
-        var refresh = await _anonymous.PostAsJsonAsync("/auth/refresh", new { refreshToken = "not-a-real-token" });
+        var refresh = await RefreshAsync("not-a-real-token");
 
         refresh.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        ShouldClearRefreshCookie(refresh);
+    }
+
+    [Fact]
+    public async Task Refresh_WithoutCookie_ReturnsUnauthorized()
+    {
+        var refresh = await _anonymous.PostAsync("/auth/refresh", null);
+
+        refresh.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        (await ApiDriver.ReadErrorCodeAsync(refresh)).ShouldBe("Users.InvalidRefreshToken");
+    }
+
+    [Fact]
+    public async Task Login_PutsTheRefreshTokenOnlyInAnHttpOnlyCookieScopedToAuth()
+    {
+        var email = await RegisterAsync();
+
+        var login = await _anonymous.PostAsJsonAsync("/auth/login", new { email, password = Password });
+
+        var cookie = GetRefreshCookie(login).ToLowerInvariant();
+        cookie.ShouldContain("httponly");
+        cookie.ShouldContain("secure");
+        cookie.ShouldContain("samesite=strict");
+        cookie.ShouldContain("path=/auth");
+        cookie.ShouldContain("expires=");
+
+        var body = await login.Content.ReadFromJsonAsync<JsonElement>();
+        body.TryGetProperty("refreshToken", out _).ShouldBeFalse();
+        body.GetProperty("expiresAt").GetDateTimeOffset().ShouldBeGreaterThan(DateTimeOffset.UtcNow);
     }
 
     [Fact]
@@ -130,12 +161,14 @@ public class AuthEndpointsTests(TaskBoardApiFactory factory) : IClassFixture<Tas
     {
         var tokens = await LoginAsync(await RegisterAsync());
 
-        (await _anonymous.PostAsJsonAsync("/auth/logout", new { refreshToken = tokens.RefreshToken }))
+        var logout = await LogoutAsync(tokens.RefreshToken);
+        logout.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        ShouldClearRefreshCookie(logout);
+        (await LogoutAsync(tokens.RefreshToken))
             .StatusCode.ShouldBe(HttpStatusCode.NoContent);
-        (await _anonymous.PostAsJsonAsync("/auth/logout", new { refreshToken = tokens.RefreshToken }))
-            .StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        (await _anonymous.PostAsync("/auth/logout", null)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
-        var refresh = await _anonymous.PostAsJsonAsync("/auth/refresh", new { refreshToken = tokens.RefreshToken });
+        var refresh = await RefreshAsync(tokens.RefreshToken);
         refresh.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
@@ -162,8 +195,9 @@ public class AuthEndpointsTests(TaskBoardApiFactory factory) : IClassFixture<Tas
         var change = await CreateClient(tokens.AccessToken).PostAsJsonAsync(
             "/me/password", new { currentPassword = Password, newPassword });
         change.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        ShouldClearRefreshCookie(change);
 
-        (await _anonymous.PostAsJsonAsync("/auth/refresh", new { refreshToken = tokens.RefreshToken }))
+        (await RefreshAsync(tokens.RefreshToken))
             .StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
         (await _anonymous.PostAsJsonAsync("/auth/login", new { email, password = Password }))
             .StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -284,7 +318,38 @@ public class AuthEndpointsTests(TaskBoardApiFactory factory) : IClassFixture<Tas
     {
         response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        return new Tokens(body.GetProperty("accessToken").GetString()!, body.GetProperty("refreshToken").GetString()!);
+        return new Tokens(body.GetProperty("accessToken").GetString()!, ReadCookieValue(GetRefreshCookie(response)));
+    }
+
+    private Task<HttpResponseMessage> RefreshAsync(string refreshToken) =>
+        SendWithRefreshCookieAsync("/auth/refresh", refreshToken);
+
+    private Task<HttpResponseMessage> LogoutAsync(string refreshToken) =>
+        SendWithRefreshCookieAsync("/auth/logout", refreshToken);
+
+    private async Task<HttpResponseMessage> SendWithRefreshCookieAsync(string path, string refreshToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, path);
+        request.Headers.Add("Cookie", $"{RefreshTokenCookie.Name}={refreshToken}");
+        return await _anonymous.SendAsync(request);
+    }
+
+    private static string GetRefreshCookie(HttpResponseMessage response)
+    {
+        response.Headers.TryGetValues("Set-Cookie", out var cookies).ShouldBeTrue();
+        return cookies!.Single(c => c.StartsWith($"{RefreshTokenCookie.Name}=", StringComparison.Ordinal));
+    }
+
+    private static string ReadCookieValue(string setCookie) =>
+        setCookie.Split(';')[0][(RefreshTokenCookie.Name.Length + 1)..];
+
+    // A deleted cookie comes back empty and already expired, on the same path it was set on.
+    private static void ShouldClearRefreshCookie(HttpResponseMessage response)
+    {
+        var cookie = GetRefreshCookie(response);
+        ReadCookieValue(cookie).ShouldBeEmpty();
+        cookie.ToLowerInvariant().ShouldContain("expires=thu, 01 jan 1970");
+        cookie.ToLowerInvariant().ShouldContain("path=/auth");
     }
 
     // Signed with the API's key and claims, so expiry is the only thing wrong with it.

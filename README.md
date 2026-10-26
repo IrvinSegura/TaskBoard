@@ -114,16 +114,18 @@ Los secretos nunca van en los appsettings. La clave JWT llega por la variable de
 
 ## API
 
-Todos los endpoints excepto `/auth/*` y `/health*` requieren un token bearer. Los listados paginados aceptan `page` (desde 1) y `pageSize` (50 por defecto, máximo 200) y responden con `items`, `page`, `pageSize`, `totalCount` y `hasNextPage`.
+Todos los endpoints excepto `/auth/*` y `/health*` requieren un token bearer.
+
+El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-token` (`HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/auth`), que el JavaScript de la página no puede leer. El frontend guarda el token de acceso solo en memoria, llama a `/auth/*` con `credentials: 'include'` y, al cargar la página, pide uno nuevo con `POST /auth/refresh`. Por `SameSite=Strict`, el frontend y la API tienen que estar en el mismo sitio: el mismo dominio o subdominios de uno (en local, `localhost` con cualquier puerto). Si hay varias pestañas abiertas, solo una debe refrescar a la vez; dos refresh con la misma cookie cuentan como reutilización y cierran todas las sesiones. Los listados paginados aceptan `page` (desde 1) y `pageSize` (50 por defecto, máximo 200) y responden con `items`, `page`, `pageSize`, `totalCount` y `hasNextPage`.
 
 | Método | Ruta | Descripción |
 | --- | --- | --- |
 | `POST` | `/auth/register` | Registrar un usuario. Limitado por IP. |
-| `POST` | `/auth/login` | Obtener un token de acceso y un refresh token. Limitado por IP. |
-| `POST` | `/auth/refresh` | Cambiar un refresh token por tokens nuevos. El anterior deja de servir; reutilizarlo cierra todas las sesiones del usuario. |
-| `POST` | `/auth/logout` | Revocar un refresh token. |
+| `POST` | `/auth/login` | Devuelve el token de acceso en el body y guarda el refresh token en una cookie. Limitado por IP. |
+| `POST` | `/auth/refresh` | Cambiar el refresh token de la cookie por tokens nuevos. El anterior deja de servir; reutilizarlo cierra todas las sesiones del usuario. |
+| `POST` | `/auth/logout` | Revocar el refresh token de la cookie y borrarla. |
 | `GET` | `/me` | Datos del usuario actual. |
-| `POST` | `/me/password` | Cambiar la contraseña. Revoca todos los refresh tokens del usuario. |
+| `POST` | `/me/password` | Cambiar la contraseña. Revoca todos los refresh tokens del usuario y borra la cookie, así que hay que volver a iniciar sesión. |
 | `GET` | `/teams` | Listar mis equipos. |
 | `POST` | `/teams` | Crear un equipo. |
 | `GET` | `/teams/{teamId}/members` | Listar los miembros del equipo con su nombre, email y rol. El dueño aparece primero. |

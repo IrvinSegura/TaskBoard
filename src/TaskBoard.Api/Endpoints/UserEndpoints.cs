@@ -1,3 +1,4 @@
+using TaskBoard.Api.Authentication;
 using TaskBoard.Api.Extensions;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Features.Auth.ChangePassword;
@@ -22,9 +23,16 @@ internal sealed class UserEndpoints : IEndpoint
         group.MapPost("/password", async (
             ChangePasswordCommand command,
             ICommandHandler<ChangePasswordCommand> handler,
+            HttpContext httpContext,
             CancellationToken cancellationToken) =>
         {
             var result = await handler.Handle(command, cancellationToken);
+            if (result.IsSuccess)
+            {
+                // Every refresh token of the user was just revoked, this session's one included.
+                RefreshTokenCookie.Delete(httpContext.Response);
+            }
+
             return result.ToHttpResult();
         });
     }
