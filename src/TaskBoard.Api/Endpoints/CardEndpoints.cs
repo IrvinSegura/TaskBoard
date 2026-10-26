@@ -3,7 +3,10 @@ using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Features.Cards.ArchiveCard;
 using TaskBoard.Application.Features.Cards.AssignCardMember;
 using TaskBoard.Application.Features.Cards.CreateCard;
+using TaskBoard.Application.Features.Cards.GetCardDetail;
 using TaskBoard.Application.Features.Cards.MoveCard;
+using TaskBoard.Application.Features.Cards.RestoreCard;
+using TaskBoard.Application.Features.Cards.SearchCards;
 using TaskBoard.Application.Features.Cards.UnassignCardMember;
 using TaskBoard.Application.Features.Cards.UpdateCard;
 using TaskBoard.Domain.Cards;
@@ -15,6 +18,33 @@ internal sealed class CardEndpoints : IEndpoint
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup(string.Empty).WithTags("Cards").RequireAuthorization();
+
+        group.MapGet("/cards/{cardId:guid}", async (
+            Guid cardId,
+            IQueryHandler<GetCardDetailQuery, CardDetailResponse> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new GetCardDetailQuery(cardId), cancellationToken);
+            return result.ToHttpResult();
+        });
+
+        group.MapGet("/boards/{boardId:guid}/cards", async (
+            Guid boardId,
+            [AsParameters] SearchCardsRequest request,
+            IQueryHandler<SearchCardsQuery, IReadOnlyList<CardSearchResultResponse>> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var query = new SearchCardsQuery(
+                boardId,
+                request.Text,
+                request.ColumnId,
+                request.AssigneeId,
+                request.Priority,
+                request.DueBefore,
+                request.Archived ?? false);
+            var result = await handler.Handle(query, cancellationToken);
+            return result.ToHttpResult();
+        });
 
         group.MapPost("/columns/{columnId:guid}/cards", async (
             Guid columnId,
@@ -69,6 +99,15 @@ internal sealed class CardEndpoints : IEndpoint
             return result.ToHttpResult();
         });
 
+        group.MapPost("/cards/{cardId:guid}/restore", async (
+            Guid cardId,
+            ICommandHandler<RestoreCardCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new RestoreCardCommand(cardId), cancellationToken);
+            return result.ToHttpResult();
+        });
+
         group.MapDelete("/cards/{cardId:guid}/assignees/{userId:guid}", async (
             Guid cardId,
             Guid userId,
@@ -79,6 +118,15 @@ internal sealed class CardEndpoints : IEndpoint
             return result.ToHttpResult();
         });
     }
+
+    // Bound from the query string, e.g. /boards/{id}/cards?text=login&priority=High&archived=true.
+    internal sealed record SearchCardsRequest(
+        string? Text,
+        Guid? ColumnId,
+        Guid? AssigneeId,
+        CardPriority? Priority,
+        DateTimeOffset? DueBefore,
+        bool? Archived);
 
     internal sealed record CreateCardRequest(string Title, string? Description);
 

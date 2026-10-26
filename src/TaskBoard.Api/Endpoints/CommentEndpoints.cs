@@ -1,6 +1,7 @@
 using TaskBoard.Api.Extensions;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Features.Comments.AddComment;
+using TaskBoard.Application.Features.Comments.DeleteComment;
 using TaskBoard.Application.Features.Comments.EditComment;
 using TaskBoard.Application.Features.Comments.GetCardComments;
 
@@ -38,6 +39,17 @@ internal sealed class CommentEndpoints : IEndpoint
             CancellationToken cancellationToken) =>
         {
             var result = await handler.Handle(new EditCommentCommand(commentId, request.Body), cancellationToken);
+            return result.ToHttpResult();
+        })
+        .WithTags("Comments")
+        .RequireAuthorization();
+
+        app.MapDelete("/comments/{commentId:guid}", async (
+            Guid commentId,
+            ICommandHandler<DeleteCommentCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new DeleteCommentCommand(commentId), cancellationToken);
             return result.ToHttpResult();
         })
         .WithTags("Comments")

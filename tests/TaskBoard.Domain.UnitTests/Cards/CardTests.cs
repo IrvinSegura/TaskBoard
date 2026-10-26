@@ -108,6 +108,18 @@ public class CardTests
     }
 
     [Fact]
+    public void Restore_ArchivedCard_ReactivatesItInItsColumnAndRaisesCardRestoredEvent()
+    {
+        var card = CreateCard();
+        card.Archive();
+
+        card.Restore();
+
+        card.IsArchived.ShouldBeFalse();
+        card.DomainEvents.OfType<CardRestoredEvent>().ShouldHaveSingleItem().ColumnId.ShouldBe(card.ColumnId);
+    }
+
+    [Fact]
     public void MoveTo_ArchivedCard_ReturnsArchived()
     {
         var card = CreateCard();

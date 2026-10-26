@@ -9,12 +9,16 @@ public interface IBoardClient
 
     Task BoardArchived(BoardArchivedMessage message);
 
+    Task BoardRestored(BoardRestoredMessage message);
+
     // Also reaches the removed user, whose client should leave the board when it sees its own id.
     Task BoardMemberRemoved(BoardMemberRemovedMessage message);
 
     Task ColumnCreated(ColumnCreatedMessage message);
 
     Task ColumnRenamed(ColumnRenamedMessage message);
+
+    Task ColumnMoved(ColumnMovedMessage message);
 
     Task CardCreated(CardCreatedMessage message);
 
@@ -24,6 +28,8 @@ public interface IBoardClient
 
     Task CardArchived(CardArchivedMessage message);
 
+    Task CardRestored(CardRestoredMessage message);
+
     Task CardAssigned(CardAssignedMessage message);
 
     Task CardUnassigned(CardUnassignedMessage message);
@@ -32,7 +38,11 @@ public interface IBoardClient
 
     Task CommentEdited(CommentEditedMessage message);
 
+    Task CommentDeleted(CommentDeletedMessage message);
+
     Task AttachmentAdded(AttachmentAddedMessage message);
+
+    Task AttachmentDeleted(AttachmentDeletedMessage message);
 
     Task NotificationReceived(NotificationMessage message);
 }

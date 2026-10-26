@@ -54,6 +54,17 @@ public sealed class Board : AggregateRoot
         Raise(new BoardArchivedEvent(Id));
     }
 
+    public void Restore()
+    {
+        if (!IsArchived)
+        {
+            return;
+        }
+
+        IsArchived = false;
+        Raise(new BoardRestoredEvent(Id));
+    }
+
     public Result AddMember(Guid userId, BoardRole role)
     {
         if (IsArchived)
@@ -120,5 +131,45 @@ public sealed class Board : AggregateRoot
         column.Rename(name.Trim());
         Raise(new ColumnRenamedEvent(Id, column.Id, column.Name));
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Places a column between two neighbours of this board (both null when it is the only column).
+    /// </summary>
+    public Result MoveColumn(Guid columnId, Guid? previousColumnId, Guid? nextColumnId)
+    {
+        if (IsArchived)
+        {
+            return BoardErrors.Archived;
+        }
+
+        var column = _columns.SingleOrDefault(c => c.Id == columnId);
+        if (column is null)
+        {
+            return BoardErrors.ColumnNotFound(columnId);
+        }
+
+        var previous = FindNeighbour(previousColumnId, columnId);
+        var next = FindNeighbour(nextColumnId, columnId);
+        if (previous.IsMissing || next.IsMissing)
+        {
+            return BoardErrors.InvalidColumnNeighbour;
+        }
+
+        column.MoveTo(PositionCalculator.Between(previous.Column?.Position, next.Column?.Position));
+        Raise(new ColumnMovedEvent(Id, column.Id, column.Position));
+        return Result.Success();
+    }
+
+    // A neighbour id that is not another column of this board is missing, not ignored.
+    private (Column? Column, bool IsMissing) FindNeighbour(Guid? neighbourId, Guid movingColumnId)
+    {
+        if (neighbourId is null)
+        {
+            return (null, false);
+        }
+
+        var neighbour = _columns.SingleOrDefault(c => c.Id == neighbourId && c.Id != movingColumnId);
+        return (neighbour, neighbour is null);
     }
 }

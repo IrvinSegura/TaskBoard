@@ -47,4 +47,16 @@ public sealed class Attachment : AggregateRoot
         attachment.Raise(new AttachmentAddedEvent(attachment.Id, cardId, boardId, fileName));
         return attachment;
     }
+
+    // Checks the rule and raises the event; the caller removes the attachment from its repository.
+    public Result Delete(Guid actorId, bool actorIsBoardAdmin)
+    {
+        if (actorId != UploadedById && !actorIsBoardAdmin)
+        {
+            return AttachmentErrors.CannotDelete;
+        }
+
+        Raise(new AttachmentDeletedEvent(Id, CardId, BoardId, StorageKey));
+        return Result.Success();
+    }
 }
