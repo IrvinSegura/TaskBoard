@@ -7,6 +7,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using StackExchange.Redis;
 using TaskBoard.Application.Abstractions.Authentication;
 using TaskBoard.Application.Abstractions.Authorization;
+using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Abstractions.Persistence;
 using TaskBoard.Application.Abstractions.Storage;
 using TaskBoard.Infrastructure.Authentication;
@@ -73,7 +74,7 @@ public static class DependencyInjection
     private static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<AuditableEntityInterceptor>();
-        services.AddSingleton<InsertOutboxMessagesInterceptor>();
+        services.AddScoped<InsertOutboxMessagesInterceptor>();
         services.AddSingleton<BoardRoleCacheInvalidationInterceptor>();
 
         services.AddDbContext<ApplicationDbContext>((serviceProvider, options) => options
@@ -96,12 +97,15 @@ public static class DependencyInjection
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<ILabelRepository, LabelRepository>();
         services.AddScoped<IChecklistItemRepository, ChecklistItemRepository>();
+        services.AddScoped<IActivityRepository, ActivityRepository>();
 
         services.AddScoped<BoardAccessService>();
         services.AddScoped<IBoardAccessService, CachedBoardAccessService>();
 
         services.Configure<OutboxOptions>(configuration.GetSection(OutboxOptions.SectionName));
         services.AddScoped<DomainEventDispatcher>();
+        services.AddScoped<DomainEventContext>();
+        services.AddScoped<IDomainEventContext>(provider => provider.GetRequiredService<DomainEventContext>());
         services.AddHostedService<OutboxProcessor>();
 
         services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>("database", tags: [ReadinessTag]);

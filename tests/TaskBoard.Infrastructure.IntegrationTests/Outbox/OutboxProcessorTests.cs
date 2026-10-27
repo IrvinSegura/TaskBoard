@@ -54,6 +54,7 @@ public class OutboxProcessorTests(PostgresFixture fixture) : IClassFixture<Postg
         var services = new ServiceCollection();
         services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(fixture.ConnectionString));
         services.AddScoped<DomainEventDispatcher>();
+        services.AddScoped<DomainEventContext>();
         services.AddSingleton<IDomainEventHandler<BoardRenamedEvent>>(handler);
         return services.BuildServiceProvider();
     }
@@ -77,7 +78,7 @@ public class OutboxProcessorTests(PostgresFixture fixture) : IClassFixture<Postg
         await using var db = fixture.CreateDbContext();
         foreach (var domainEvent in events)
         {
-            var message = OutboxMessage.Create(domainEvent, DateTimeOffset.UtcNow);
+            var message = OutboxMessage.Create(domainEvent, DateTimeOffset.UtcNow, actorId: null);
             message.LockedUntil = lockedUntil;
             db.OutboxMessages.Add(message);
         }

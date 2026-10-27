@@ -38,6 +38,7 @@ internal sealed class OutboxProcessor(
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var dispatcher = scope.ServiceProvider.GetRequiredService<DomainEventDispatcher>();
+        var eventContext = scope.ServiceProvider.GetRequiredService<DomainEventContext>();
 
         var messages = await ClaimBatchAsync(db, cancellationToken);
 
@@ -45,6 +46,7 @@ internal sealed class OutboxProcessor(
         {
             try
             {
+                eventContext.Set(message.ActorId, message.OccurredAt);
                 await dispatcher.DispatchAsync(Deserialize(message), cancellationToken);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

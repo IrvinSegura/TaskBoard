@@ -18,6 +18,9 @@ public sealed class OutboxMessage
 
     public DateTimeOffset OccurredAt { get; init; }
 
+    // The user whose request raised the event, for activity history; null outside signed-in requests.
+    public Guid? ActorId { get; init; }
+
     public DateTimeOffset? ProcessedAt { get; set; }
 
     // Lease taken by the instance processing the message; see OutboxProcessor.
@@ -25,7 +28,7 @@ public sealed class OutboxMessage
 
     public string? Error { get; set; }
 
-    public static OutboxMessage Create(IDomainEvent domainEvent, DateTimeOffset occurredAt)
+    public static OutboxMessage Create(IDomainEvent domainEvent, DateTimeOffset occurredAt, Guid? actorId)
     {
         var eventType = domainEvent.GetType();
 
@@ -34,7 +37,8 @@ public sealed class OutboxMessage
             Id = Guid.CreateVersion7(),
             Type = eventType.FullName!,
             Content = JsonSerializer.Serialize(domainEvent, eventType),
-            OccurredAt = occurredAt
+            OccurredAt = occurredAt,
+            ActorId = actorId
         };
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TaskBoard.Application.Abstractions.Persistence;
+using TaskBoard.Domain.Activities;
 using TaskBoard.Domain.Attachments;
 using TaskBoard.Domain.Boards;
 using TaskBoard.Domain.Cards;
@@ -47,6 +48,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
     public DbSet<ChecklistItem> ChecklistItems => Set<ChecklistItem>();
 
+    public DbSet<ActivityEntry> Activities => Set<ActivityEntry>();
+
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     IQueryable<User> IReadDbContext.Users => Users.AsNoTracking();
@@ -72,6 +75,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     IQueryable<Label> IReadDbContext.Labels => Labels.AsNoTracking();
 
     IQueryable<ChecklistItem> IReadDbContext.ChecklistItems => ChecklistItems.AsNoTracking();
+
+    IQueryable<ActivityEntry> IReadDbContext.Activities => Activities.AsNoTracking();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
