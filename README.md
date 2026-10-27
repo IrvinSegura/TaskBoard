@@ -2,7 +2,7 @@
 
 [![ci](https://github.com/IrvinSegura/TaskBoard/actions/workflows/ci.yml/badge.svg)](https://github.com/IrvinSegura/TaskBoard/actions/workflows/ci.yml)
 
-API de tablero de tareas estilo Kanban construida con ASP.NET Core. Los equipos tienen tableros, los tableros tienen columnas y tarjetas, y cada cambio se envía en tiempo real a los clientes conectados mediante SignalR.
+Tablero de tareas estilo Kanban: una API construida con ASP.NET Core y un frontend en React. Los equipos tienen tableros, los tableros tienen columnas y tarjetas, y cada cambio se envía en tiempo real a los clientes conectados mediante SignalR.
 
 ## Funcionalidades
 
@@ -13,6 +13,7 @@ API de tablero de tareas estilo Kanban construida con ASP.NET Core. Los equipos 
 - **Comentarios y adjuntos**: agregar, editar y borrar comentarios; subir, descargar y borrar archivos (disco local o Azure Blob Storage).
 - **Notificaciones**: notificaciones personales con marca de leído.
 - **Tiempo real**: eventos de tablero y notificaciones enviados por SignalR.
+- **Frontend**: aplicación web en React con tableros arrastrables, detalle de tarjetas, comentarios, adjuntos, filtros, notificaciones en vivo y modo claro/oscuro.
 - **Operación**: health checks (`/health`), imagen Docker, migraciones como paso de despliegue y soporte para varias instancias con Redis.
 
 ## Stack tecnológico
@@ -28,6 +29,8 @@ API de tablero de tareas estilo Kanban construida con ASP.NET Core. Los equipos 
 | Logging | Serilog |
 | Documentación de la API | OpenAPI + Scalar |
 | Pruebas | xUnit, Shouldly, NSubstitute, Testcontainers, NetArchTest |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, TanStack Query, React Router, dnd-kit, Radix UI |
+| Pruebas del frontend | Vitest, Testing Library |
 
 ## Arquitectura
 
@@ -45,6 +48,11 @@ tests/
   TaskBoard.Infrastructure.IntegrationTests   PostgreSQL real con Testcontainers.
   TaskBoard.Api.FunctionalTests               La API completa en memoria con WebApplicationFactory.
   TaskBoard.ArchitectureTests                 Reglas de dependencia entre capas.
+web/
+  src/app          Router, proveedores y páginas de error.
+  src/components   Sistema de diseño (botones, diálogos, menús...) y layout (sidebar, barra superior).
+  src/features     Un módulo por funcionalidad: auth, account, teams, boards, cards, notifications, dashboard.
+  src/lib          Cliente HTTP con refresh de sesión, conexión de SignalR, tema y utilidades.
 ```
 
 Decisiones de diseño principales:
@@ -85,6 +93,33 @@ Levanta PostgreSQL, Azurite y Redis, aplica las migraciones con el servicio `mig
    ```
 
 En el entorno `Development` la API aplica las migraciones pendientes al arrancar, y el perfil de `launchSettings.json` define una clave JWT de desarrollo. La API escucha en `http://localhost:5080` y la referencia interactiva está en `http://localhost:5080/scalar`.
+
+### Frontend
+
+Requiere [Node.js 24](https://nodejs.org/). Con la API corriendo en `http://localhost:5080`:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+La aplicación queda en `http://localhost:5173`, el único origen que la API acepta por CORS en desarrollo (`Cors:AllowedOrigins`). Para apuntar a otra API, copia `web/.env.example` a `web/.env` y cambia `VITE_API_URL`.
+
+| Script | Descripción |
+| --- | --- |
+| `npm run dev` | Servidor de desarrollo con recarga en caliente. |
+| `npm run build` | Comprueba los tipos y genera la versión de producción en `web/dist`. |
+| `npm run lint` | ESLint. |
+| `npm run typecheck` | Solo la comprobación de tipos. |
+| `npm test` | Pruebas con Vitest. |
+
+Cómo se conecta con la API:
+
+- **Sesión**: el token de acceso vive solo en memoria y el refresh token en la cookie `HttpOnly`. Al cargar la página se pide uno nuevo con `POST /auth/refresh`; si una petición recibe un 401, el cliente refresca una vez y la reintenta. Las pestañas se turnan para refrescar con la Web Locks API, así que nunca se envía dos veces la misma cookie, y cerrar sesión en una pestaña la cierra en las demás.
+- **Datos**: TanStack Query guarda en caché las respuestas. Mover tarjetas y columnas se refleja al instante (actualización optimista) y se deshace si la API lo rechaza.
+- **Tiempo real**: una sola conexión de SignalR por pestaña. Al abrir un tablero el cliente llama a `JoinBoard`, y cada evento vuelve a pedir los datos afectados. Si el usuario pierde acceso al tablero, se le saca de él.
+- **Permisos**: la interfaz oculta o desactiva lo que el rol del usuario en el tablero no permite, y los tableros archivados se muestran de solo lectura; la API sigue siendo quien valida.
 
 ## Configuración
 
@@ -189,7 +224,7 @@ Conéctate al hub de SignalR en `/hubs/board`. Los navegadores envían el token 
 dotnet test TaskBoard.slnx
 ```
 
-Las pruebas de integración y funcionales levantan sus propios contenedores de PostgreSQL y aplican las migraciones, así que Docker debe estar corriendo. El CI ejecuta toda la suite y construye las imágenes Docker en cada push y pull request a `main`.
+Las pruebas de integración y funcionales levantan sus propios contenedores de PostgreSQL y aplican las migraciones, así que Docker debe estar corriendo. Las del frontend se ejecutan con `npm test` dentro de `web`. El CI ejecuta toda la suite, revisa el frontend (lint, tipos, pruebas y build) y construye las imágenes Docker en cada push y pull request a `main`.
 
 ## Migraciones
 
