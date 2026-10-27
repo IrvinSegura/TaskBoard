@@ -94,6 +94,8 @@ public static class DependencyInjection
         services.AddScoped<ICommentRepository, CommentRepository>();
         services.AddScoped<IAttachmentRepository, AttachmentRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<ILabelRepository, LabelRepository>();
+        services.AddScoped<IChecklistItemRepository, ChecklistItemRepository>();
 
         services.AddScoped<BoardAccessService>();
         services.AddScoped<IBoardAccessService, CachedBoardAccessService>();

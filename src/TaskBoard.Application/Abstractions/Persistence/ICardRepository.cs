@@ -4,7 +4,7 @@ namespace TaskBoard.Application.Abstractions.Persistence;
 
 public interface ICardRepository
 {
-    // Loads the card with its assignments.
+    // Loads the card with its assignments and labels.
     Task<Card?> GetByIdAsync(Guid cardId, CancellationToken cancellationToken);
 
     Task<double?> GetLastPositionAsync(Guid columnId, CancellationToken cancellationToken);

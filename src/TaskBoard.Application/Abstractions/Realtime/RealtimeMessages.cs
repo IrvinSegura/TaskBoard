@@ -42,6 +42,12 @@ public sealed record CardAssignedMessage(Guid CardId, Guid UserId);
 
 public sealed record CardUnassignedMessage(Guid CardId, Guid UserId);
 
+public sealed record LabelsChangedMessage(Guid BoardId);
+
+public sealed record CardLabelsChangedMessage(Guid CardId);
+
+public sealed record ChecklistChangedMessage(Guid CardId);
+
 public sealed record CommentAddedMessage(Guid CommentId, Guid CardId, Guid AuthorId, string Body);
 
 public sealed record CommentEditedMessage(Guid CommentId, Guid CardId, string Body);

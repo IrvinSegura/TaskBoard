@@ -43,6 +43,14 @@ public interface IBoardClient
 
     Task CardUnassigned(CardUnassignedMessage message);
 
+    // A board label was created, renamed, recoloured or deleted.
+    Task LabelsChanged(LabelsChangedMessage message);
+
+    Task CardLabelsChanged(CardLabelsChangedMessage message);
+
+    // An item of the card's checklist was added, edited, checked off or deleted.
+    Task ChecklistChanged(ChecklistChangedMessage message);
+
     Task CommentAdded(CommentAddedMessage message);
 
     Task CommentEdited(CommentEditedMessage message);
