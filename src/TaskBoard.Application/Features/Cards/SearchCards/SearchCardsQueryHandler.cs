@@ -32,6 +32,11 @@ internal sealed class SearchCardsQueryHandler(IReadDbContext db)
             cards = cards.Where(c => c.Assignments.Any(a => a.UserId == assigneeId));
         }
 
+        if (query.LabelId is { } labelId)
+        {
+            cards = cards.Where(c => c.Labels.Any(l => l.LabelId == labelId));
+        }
+
         if (query.Priority is { } priority)
         {
             cards = cards.Where(c => c.Priority == priority);
@@ -54,7 +59,8 @@ internal sealed class SearchCardsQueryHandler(IReadDbContext db)
                 c.Priority,
                 c.DueDate,
                 c.IsArchived,
-                c.Assignments.Select(a => a.UserId).ToList()))
+                c.Assignments.Select(a => a.UserId).ToList(),
+                c.Labels.Select(l => l.LabelId).ToList()))
             .ToPagedResponseAsync(query.Page, cancellationToken);
 
         return results;

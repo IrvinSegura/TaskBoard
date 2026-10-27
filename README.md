@@ -10,6 +10,7 @@ Tablero de tareas estilo Kanban: una API construida con ASP.NET Core y un fronte
 - **Equipos**: crear, renombrar y eliminar equipos (solo el dueño elimina), agregar y quitar miembros, cambiar roles y salir de un equipo.
 - **Tableros**: tableros por equipo con miembros, roles y visibilidad; renombrarlos, archivarlos, restaurarlos y eliminarlos (solo si están archivados). Los tableros archivados son de solo lectura.
 - **Columnas y tarjetas**: crear, renombrar, reordenar y eliminar columnas (con sus tarjetas); crear, editar, mover, archivar, restaurar y eliminar tarjetas archivadas, asignar o desasignar miembros, y buscar o filtrar las tarjetas de un tablero.
+- **Etiquetas y checklists**: etiquetas de colores por tablero que se ponen en las tarjetas y sirven de filtro; una checklist por tarjeta, con su avance en el tablero.
 - **Comentarios y adjuntos**: agregar, editar y borrar comentarios; subir, descargar y borrar archivos (disco local o Azure Blob Storage).
 - **Notificaciones**: avisos cuando te asignan una tarjeta, comentan en ella o te agregan a un equipo o tablero; con marca de leído, marcar todas como leídas y eliminarlas.
 - **Tiempo real**: eventos de tablero y notificaciones enviados por SignalR.
@@ -184,7 +185,7 @@ El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-toke
 | `PATCH` | `/columns/{columnId}/move` | Mover una columna entre dos columnas vecinas. |
 | `DELETE` | `/columns/{columnId}` | Eliminar una columna y sus tarjetas, también las archivadas. Solo admins del tablero. |
 | `POST` | `/columns/{columnId}/cards` | Crear una tarjeta. |
-| `GET` | `/boards/{boardId}/cards` | Buscar y filtrar tarjetas: `text`, `columnId`, `assigneeId`, `priority`, `dueBefore`, `archived`. Paginado. |
+| `GET` | `/boards/{boardId}/cards` | Buscar y filtrar tarjetas: `text`, `columnId`, `assigneeId`, `labelId`, `priority`, `dueBefore`, `archived`. Paginado. |
 | `GET` | `/cards/{cardId}` | Obtener una tarjeta con sus miembros asignados, adjuntos y número de comentarios. |
 | `PUT` | `/cards/{cardId}` | Editar título, descripción, prioridad y fecha límite de una tarjeta. |
 | `PATCH` | `/cards/{cardId}/move` | Mover una tarjeta a una columna y posición. |
@@ -193,6 +194,14 @@ El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-toke
 | `DELETE` | `/cards/{cardId}` | Eliminar una tarjeta archivada con sus comentarios y adjuntos. Solo admins del tablero. |
 | `POST` | `/cards/{cardId}/assignees` | Asignar un miembro a una tarjeta. |
 | `DELETE` | `/cards/{cardId}/assignees/{userId}` | Desasignar a un miembro de una tarjeta. |
+| `POST` | `/boards/{boardId}/labels` | Crear una etiqueta (`name`, `color`). Editores y admins. |
+| `PUT` | `/boards/{boardId}/labels/{labelId}` | Cambiar el nombre y el color de una etiqueta. |
+| `DELETE` | `/boards/{boardId}/labels/{labelId}` | Eliminar una etiqueta; se quita de todas sus tarjetas. |
+| `POST` | `/cards/{cardId}/labels` | Poner una etiqueta del tablero en una tarjeta (`labelId`). |
+| `DELETE` | `/cards/{cardId}/labels/{labelId}` | Quitar una etiqueta de una tarjeta. |
+| `POST` | `/cards/{cardId}/checklist` | Añadir un elemento a la checklist (`text`). |
+| `PATCH` | `/cards/{cardId}/checklist/{itemId}` | Cambiar el texto o marcar un elemento (`text`, `isDone`; solo lo que se envía). |
+| `DELETE` | `/cards/{cardId}/checklist/{itemId}` | Eliminar un elemento de la checklist. |
 | `GET` | `/cards/{cardId}/comments` | Listar los comentarios de una tarjeta, del más antiguo al más reciente. Paginado. |
 | `POST` | `/cards/{cardId}/comments` | Agregar un comentario. |
 | `PATCH` | `/comments/{commentId}` | Editar tu propio comentario. |
@@ -212,7 +221,7 @@ El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-toke
 Conéctate al hub de SignalR en `/hubs/board`. Los navegadores envían el token en el parámetro `access_token` de la query string.
 
 - Llama a `JoinBoard(boardId)` al abrir un tablero y a `LeaveBoard(boardId)` al salir. Solo los miembros del tablero pueden unirse.
-- Eventos de tablero: `BoardRenamed`, `BoardArchived`, `BoardRestored`, `BoardDeleted`, `BoardMemberRemoved`, `ColumnCreated`, `ColumnRenamed`, `ColumnMoved`, `ColumnDeleted`, `CardCreated`, `CardUpdated`, `CardMoved`, `CardArchived`, `CardRestored`, `CardDeleted`, `CardAssigned`, `CardUnassigned`, `CommentAdded`, `CommentEdited`, `CommentDeleted`, `AttachmentAdded`, `AttachmentDeleted`.
+- Eventos de tablero: `BoardRenamed`, `BoardArchived`, `BoardRestored`, `BoardDeleted`, `BoardMemberRemoved`, `ColumnCreated`, `ColumnRenamed`, `ColumnMoved`, `ColumnDeleted`, `CardCreated`, `CardUpdated`, `CardMoved`, `CardArchived`, `CardRestored`, `CardDeleted`, `CardAssigned`, `CardUnassigned`, `LabelsChanged`, `CardLabelsChanged`, `ChecklistChanged`, `CommentAdded`, `CommentEdited`, `CommentDeleted`, `AttachmentAdded`, `AttachmentDeleted`.
 - Cuando un usuario pierde acceso a un tablero, el servidor envía `BoardMemberRemoved` con su propio id a cada una de sus conexiones y luego las saca del grupo, para que el cliente pueda cerrar el tablero. Ese mensaje puede llegarle dos veces (el aviso directo y el del grupo), así que el cliente debe tratarlo de forma idempotente.
 - Eventos personales: `NotificationReceived` y `TeamDeleted` (a cada miembro de un equipo eliminado), que llegan a todas las conexiones del usuario sin unirse a ningún tablero.
 - Con `ConnectionStrings:Redis` configurado, los mensajes llegan a los clientes conectados a cualquier instancia, y cada instancia saca del grupo a sus propias conexiones cuando un usuario pierde acceso.

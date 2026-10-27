@@ -1,3 +1,4 @@
+import type { BoardLabel } from '@/features/labels/labels-api'
 import { api, type CreatedResponse } from '@/lib/api/client'
 
 // Ordered like the API's BoardRole enum, so roles compare by privilege.
@@ -28,6 +29,9 @@ export interface CardSummary {
   dueDate: string | null
   position: number
   assigneeIds: string[]
+  labelIds: string[]
+  /** Null when the card has no checklist. */
+  checklist: { done: number; total: number } | null
 }
 
 export interface BoardColumn {
@@ -42,6 +46,7 @@ export interface BoardDetail {
   name: string
   visibility: BoardVisibility
   members: BoardMember[]
+  labels: BoardLabel[]
   columns: BoardColumn[]
 }
 

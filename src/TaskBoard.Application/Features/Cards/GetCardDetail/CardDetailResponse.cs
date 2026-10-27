@@ -17,9 +17,13 @@ public sealed record CardDetailResponse(
     DateTimeOffset CreatedAt,
     int CommentCount,
     IReadOnlyList<CardAssigneeResponse> Assignees,
-    IReadOnlyList<CardAttachmentResponse> Attachments);
+    IReadOnlyList<CardAttachmentResponse> Attachments,
+    IReadOnlyList<Guid> LabelIds,
+    IReadOnlyList<ChecklistItemResponse> Checklist);
 
 public sealed record CardAssigneeResponse(Guid UserId, string DisplayName);
+
+public sealed record ChecklistItemResponse(Guid Id, string Text, bool IsDone, double Position);
 
 public sealed record CardAttachmentResponse(
     Guid Id,
