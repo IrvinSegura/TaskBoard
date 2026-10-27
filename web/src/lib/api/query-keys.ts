@@ -14,4 +14,7 @@ export const queryKeys = {
   cardComments: (cardId: string) => ['cards', cardId, 'comments'] as const,
   notifications: () => ['notifications'] as const,
   myCards: () => ['me', 'cards'] as const,
+  /** Every activity feed; one board change can show in the board, team, card and personal feeds. */
+  allActivity: () => ['activity'] as const,
+  activity: (scope: string, id?: string) => ['activity', scope, id ?? 'me'] as const,
 }
