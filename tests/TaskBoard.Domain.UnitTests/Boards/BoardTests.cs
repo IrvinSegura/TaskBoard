@@ -198,4 +198,64 @@ public class BoardTests
         positions.Zip(positions.Skip(1), (previous, next) => next - previous).ShouldAllBe(gap => gap > 0);
         board.DomainEvents.OfType<ColumnMovedEvent>().Count().ShouldBeGreaterThan(60);
     }
+
+    [Fact]
+    public void Delete_ActiveBoard_ReturnsNotArchived()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);
+
+        var result = board.Delete();
+
+        result.Error.ShouldBe(BoardErrors.NotArchived);
+        board.DomainEvents.OfType<BoardDeletedEvent>().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Delete_ArchivedBoard_RaisesBoardDeletedEvent()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);
+        board.Archive();
+
+        var result = board.Delete();
+
+        result.IsSuccess.ShouldBeTrue();
+        board.DomainEvents.OfType<BoardDeletedEvent>().ShouldHaveSingleItem().BoardId.ShouldBe(board.Id);
+    }
+
+    [Fact]
+    public void DeleteColumn_RemovesTheColumnAndRaisesColumnDeletedEvent()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);
+        var column = board.AddColumn("To do").Value;
+        var other = board.AddColumn("Done").Value;
+
+        var result = board.DeleteColumn(column.Id);
+
+        result.IsSuccess.ShouldBeTrue();
+        board.Columns.ShouldHaveSingleItem().ShouldBe(other);
+        board.DomainEvents.OfType<ColumnDeletedEvent>().ShouldHaveSingleItem().ColumnId.ShouldBe(column.Id);
+    }
+
+    [Fact]
+    public void DeleteColumn_ArchivedBoard_ReturnsArchived()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);
+        var column = board.AddColumn("To do").Value;
+        board.Archive();
+
+        var result = board.DeleteColumn(column.Id);
+
+        result.Error.ShouldBe(BoardErrors.Archived);
+        board.Columns.ShouldHaveSingleItem();
+    }
+
+    [Fact]
+    public void DeleteColumn_UnknownColumn_ReturnsColumnNotFound()
+    {
+        var board = Board.Create(Guid.NewGuid(), "Roadmap", Guid.NewGuid(), BoardVisibility.Private);
+
+        var result = board.DeleteColumn(Guid.NewGuid());
+
+        result.Error.Code.ShouldBe("Boards.ColumnNotFound");
+    }
 }
