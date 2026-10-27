@@ -11,7 +11,7 @@ Tablero de tareas estilo Kanban: una API construida con ASP.NET Core y un fronte
 - **Tableros**: tableros por equipo con miembros, roles y visibilidad; renombrarlos, archivarlos, restaurarlos y eliminarlos (solo si están archivados). Los tableros archivados son de solo lectura.
 - **Columnas y tarjetas**: crear, renombrar, reordenar y eliminar columnas (con sus tarjetas); crear, editar, mover, archivar, restaurar y eliminar tarjetas archivadas, asignar o desasignar miembros, y buscar o filtrar las tarjetas de un tablero.
 - **Comentarios y adjuntos**: agregar, editar y borrar comentarios; subir, descargar y borrar archivos (disco local o Azure Blob Storage).
-- **Notificaciones**: notificaciones personales con marca de leído, marcar todas como leídas y eliminarlas.
+- **Notificaciones**: avisos cuando te asignan una tarjeta, comentan en ella o te agregan a un equipo o tablero; con marca de leído, marcar todas como leídas y eliminarlas.
 - **Tiempo real**: eventos de tablero y notificaciones enviados por SignalR.
 - **Frontend**: aplicación web en React con tableros arrastrables, detalle de tarjetas, comentarios, adjuntos, filtros, notificaciones en vivo y modo claro/oscuro.
 - **Operación**: health checks (`/health`), imagen Docker, migraciones como paso de despliegue y soporte para varias instancias con Redis.

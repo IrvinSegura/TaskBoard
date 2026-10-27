@@ -34,6 +34,20 @@ public class OutboxEndToEndTests(TaskBoardApiFactory factory) : IClassFixture<Ta
     }
 
     [Fact]
+    public async Task AddingATeamMember_NotifiesTheNewMember()
+    {
+        var owner = await _api.CreateUserAsync();
+        var member = await _api.CreateUserAsync();
+
+        var teamId = await _api.CreateTeamAsync(owner, member);
+
+        var notification = await WaitForNotificationAsync(member, teamId);
+        notification.GetProperty("type").GetString().ShouldBe("AddedToTeam");
+        notification.GetProperty("message").GetString()!.ShouldContain("Team");
+        (await owner.Client.GetFromJsonAsync<JsonElement>("/notifications")).EnumerateArray().ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Notifications_CanBeMarkedAllAsReadAndDeleted()
     {
         var owner = await _api.CreateUserAsync();
