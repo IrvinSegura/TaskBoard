@@ -20,7 +20,7 @@ function gradientFor(id: string): string {
 interface TeamAvatarProps {
   name: string
   id: string
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
   className?: string
 }
 
@@ -28,6 +28,7 @@ const sizes = {
   sm: 'size-6 rounded-md text-[11px]',
   md: 'size-10 rounded-lg text-base',
   lg: 'size-12 rounded-xl text-lg',
+  xl: 'size-16 rounded-2xl text-2xl',
 }
 
 export function TeamAvatar({ name, id, size = 'md', className }: TeamAvatarProps) {
