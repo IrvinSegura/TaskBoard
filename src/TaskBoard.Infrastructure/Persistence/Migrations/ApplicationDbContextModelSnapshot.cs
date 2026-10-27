@@ -248,6 +248,70 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                     b.ToTable("CardAssignments");
                 });
 
+            modelBuilder.Entity("TaskBoard.Domain.Cards.CardLabel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("LabelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabelId");
+
+                    b.HasIndex("CardId", "LabelId")
+                        .IsUnique();
+
+                    b.ToTable("CardLabels");
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Checklists.ChecklistItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BoardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDone")
+                        .HasColumnType("boolean");
+
+                    b.Property<double>("Position")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BoardId");
+
+                    b.HasIndex("CardId", "Position");
+
+                    b.ToTable("ChecklistItems");
+                });
+
             modelBuilder.Entity("TaskBoard.Domain.Comments.Comment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -283,6 +347,37 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                     b.HasIndex("CardId", "CreatedAt");
 
                     b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Labels.Label", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BoardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BoardId");
+
+                    b.ToTable("Labels");
                 });
 
             modelBuilder.Entity("TaskBoard.Domain.Notifications.Notification", b =>
@@ -573,6 +668,30 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TaskBoard.Domain.Cards.CardLabel", b =>
+                {
+                    b.HasOne("TaskBoard.Domain.Cards.Card", null)
+                        .WithMany("Labels")
+                        .HasForeignKey("CardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TaskBoard.Domain.Labels.Label", null)
+                        .WithMany()
+                        .HasForeignKey("LabelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Checklists.ChecklistItem", b =>
+                {
+                    b.HasOne("TaskBoard.Domain.Cards.Card", null)
+                        .WithMany()
+                        .HasForeignKey("CardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TaskBoard.Domain.Comments.Comment", b =>
                 {
                     b.HasOne("TaskBoard.Domain.Users.User", null)
@@ -584,6 +703,15 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                     b.HasOne("TaskBoard.Domain.Cards.Card", null)
                         .WithMany()
                         .HasForeignKey("CardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Labels.Label", b =>
+                {
+                    b.HasOne("TaskBoard.Domain.Boards.Board", null)
+                        .WithMany()
+                        .HasForeignKey("BoardId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -631,6 +759,8 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("TaskBoard.Domain.Cards.Card", b =>
                 {
                     b.Navigation("Assignments");
+
+                    b.Navigation("Labels");
                 });
 
             modelBuilder.Entity("TaskBoard.Domain.Teams.Team", b =>

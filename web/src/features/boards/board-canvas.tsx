@@ -225,6 +225,7 @@ export function BoardCanvas({ board, canEdit, visibleCardIds, onOpenCard }: Boar
               column={column}
               cards={visibleCardIds ? column.cards.filter((card) => visibleCardIds.has(card.id)) : column.cards}
               members={board.members}
+              labels={board.labels}
               canEdit={canEdit}
               dragEnabled={dragEnabled}
               filtered={visibleCardIds !== null}
@@ -237,12 +238,12 @@ export function BoardCanvas({ board, canEdit, visibleCardIds, onOpenCard }: Boar
 
       {createPortal(
         <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
-          {activeCard && <BoardCardView card={activeCard} members={board.members} overlay />}
+          {activeCard && <BoardCardView card={activeCard} members={board.members} labels={board.labels} overlay />}
           {activeColumn && (
             <div className="flex w-72 rotate-1 flex-col gap-2 rounded-xl border border-line bg-subtle p-2 shadow-overlay">
               <p className="px-1 pt-0.5 text-sm font-semibold">{activeColumn.name}</p>
               {activeColumn.cards.slice(0, 6).map((card) => (
-                <BoardCardView key={card.id} card={card} members={board.members} />
+                <BoardCardView key={card.id} card={card} members={board.members} labels={board.labels} />
               ))}
             </div>
           )}

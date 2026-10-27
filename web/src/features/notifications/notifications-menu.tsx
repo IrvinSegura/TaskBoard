@@ -41,7 +41,7 @@ export function NotificationsMenu() {
                 variant="ghost"
                 size="sm"
                 loading={markAll.isPending}
-                onClick={() => markAll.mutate(unread.map((n) => n.id))}
+                onClick={() => markAll.mutate()}
               >
                 <CheckCheck />
                 Marcar todo como leído

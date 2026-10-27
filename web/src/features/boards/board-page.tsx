@@ -12,6 +12,7 @@ import { boardPermissions, type BoardPermissions } from './board-permissions'
 import { useBoard, useBoardLocation, type BoardLocation } from './board-queries'
 import type { BoardDetail } from './boards-api'
 import { emptyFilters, useFilteredCardIds, type CardFilters } from './card-search'
+import { useIsBoardView } from './board-view'
 import { useBoardRealtime } from './use-board-realtime'
 
 export interface BoardOutletContext {
@@ -28,6 +29,7 @@ export function BoardPage() {
   const { location, isPending: locating } = useBoardLocation(boardId)
   const [filters, setFilters] = useState<CardFilters>(emptyFilters)
   const filtered = useFilteredCardIds(boardId, filters)
+  const inView = useIsBoardView()
 
   useBoardRealtime(boardId, location?.teamId, board.isSuccess)
 
@@ -66,47 +68,57 @@ export function BoardPage() {
     <div className="flex h-full min-h-0 flex-col">
       <BoardHeader board={board.data} location={location} permissions={permissions} />
 
-      <div className="flex flex-col gap-3 px-4 pt-4 pb-3 sm:px-6">
-        {location?.archived && (
-          <Alert tone="warning">
-            <span className="inline-flex items-center gap-1.5">
-              <Archive className="size-4" />
-              Este tablero está archivado y es de solo lectura.
-              {permissions.canAdmin && ' Puedes restaurarlo desde el menú de opciones.'}
-            </span>
-          </Alert>
-        )}
-        <BoardFilters
-          filters={filters}
-          onChange={setFilters}
-          members={board.data.members}
-          meId={me.id}
-          searching={filtered.isFetching}
-          canEdit={permissions.canEdit}
-        />
-      </div>
-
-      <div className="min-h-0 flex-1">
-        {board.data.columns.length === 0 && !permissions.canEdit ? (
-          <div className="px-6">
-            <EmptyState icon={LayoutGrid} title="Este tablero no tiene columnas todavía" />
+      {inView ? (
+        <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
+          <Outlet context={{ board: board.data, location, permissions } satisfies BoardOutletContext} />
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col gap-3 px-4 pt-4 pb-3 sm:px-6">
+            {location?.archived && (
+              <Alert tone="warning">
+                <span className="inline-flex items-center gap-1.5">
+                  <Archive className="size-4" />
+                  Este tablero está archivado y es de solo lectura.
+                  {permissions.canAdmin && ' Puedes restaurarlo desde el menú de opciones.'}
+                </span>
+              </Alert>
+            )}
+            <BoardFilters
+              filters={filters}
+              onChange={setFilters}
+              members={board.data.members}
+              labels={board.data.labels}
+              meId={me.id}
+              searching={filtered.isFetching}
+              canEdit={permissions.canEdit}
+            />
           </div>
-        ) : (
-          <BoardCanvas
-            board={board.data}
-            canEdit={permissions.canEdit}
-            visibleCardIds={filtered.ids}
-            onOpenCard={openCard}
-          />
-        )}
-      </div>
 
-      <Outlet context={{ board: board.data, location, permissions } satisfies BoardOutletContext} />
+          <div className="min-h-0 flex-1">
+            {board.data.columns.length === 0 && !permissions.canEdit ? (
+              <div className="px-6">
+                <EmptyState icon={LayoutGrid} title="Este tablero no tiene columnas todavía" />
+              </div>
+            ) : (
+              <BoardCanvas
+                board={board.data}
+                canEdit={permissions.canEdit}
+                visibleCardIds={filtered.ids}
+                onOpenCard={openCard}
+              />
+            )}
+          </div>
+
+          {/* Card detail and archived cards open as dialogs over the canvas. */}
+          <Outlet context={{ board: board.data, location, permissions } satisfies BoardOutletContext} />
+        </>
+      )}
     </div>
   )
 }
 
-/** The board the BoardPage above is showing, for its child routes (card detail, archived cards). */
+/** The board the BoardPage above is showing, for its child routes (card detail, archived cards, views). */
 export function useBoardOutlet(): BoardOutletContext {
   return useOutletContext<BoardOutletContext>()
 }

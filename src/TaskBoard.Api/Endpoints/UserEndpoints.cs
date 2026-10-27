@@ -3,6 +3,7 @@ using TaskBoard.Api.Extensions;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Features.Auth.ChangePassword;
 using TaskBoard.Application.Features.Users.GetCurrentUser;
+using TaskBoard.Application.Features.Users.UpdateProfile;
 
 namespace TaskBoard.Api.Endpoints;
 
@@ -17,6 +18,15 @@ internal sealed class UserEndpoints : IEndpoint
             CancellationToken cancellationToken) =>
         {
             var result = await handler.Handle(new GetCurrentUserQuery(), cancellationToken);
+            return result.ToHttpResult();
+        });
+
+        group.MapPatch("/", async (
+            UpdateProfileCommand command,
+            ICommandHandler<UpdateProfileCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(command, cancellationToken);
             return result.ToHttpResult();
         });
 

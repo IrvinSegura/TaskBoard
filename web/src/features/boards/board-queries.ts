@@ -115,6 +115,10 @@ export function useRenameColumn(boardId: string) {
   )
 }
 
+export function useDeleteColumn(boardId: string) {
+  return useBoardMutation(boardId, undefined, (columnId: string) => boardsApi.deleteColumn(columnId))
+}
+
 export function useCreateCard(boardId: string) {
   return useBoardMutation(boardId, undefined, ({ columnId, title }: { columnId: string; title: string }) =>
     boardsApi.createCard(columnId, title),

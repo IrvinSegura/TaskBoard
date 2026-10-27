@@ -11,6 +11,9 @@ public interface IBoardClient
 
     Task BoardRestored(BoardRestoredMessage message);
 
+    // The board is gone; clients viewing it should leave.
+    Task BoardDeleted(BoardDeletedMessage message);
+
     // Also reaches a user who lost access, whose client should leave the board when it sees its own id.
     // That user can get it twice (direct notice and group message), so handle it idempotently.
     Task BoardMemberRemoved(BoardMemberRemovedMessage message);
@@ -20,6 +23,9 @@ public interface IBoardClient
     Task ColumnRenamed(ColumnRenamedMessage message);
 
     Task ColumnMoved(ColumnMovedMessage message);
+
+    // Its cards are gone with it.
+    Task ColumnDeleted(ColumnDeletedMessage message);
 
     Task CardCreated(CardCreatedMessage message);
 
@@ -31,9 +37,19 @@ public interface IBoardClient
 
     Task CardRestored(CardRestoredMessage message);
 
+    Task CardDeleted(CardDeletedMessage message);
+
     Task CardAssigned(CardAssignedMessage message);
 
     Task CardUnassigned(CardUnassignedMessage message);
+
+    // A board label was created, renamed, recoloured or deleted.
+    Task LabelsChanged(LabelsChangedMessage message);
+
+    Task CardLabelsChanged(CardLabelsChangedMessage message);
+
+    // An item of the card's checklist was added, edited, checked off or deleted.
+    Task ChecklistChanged(ChecklistChangedMessage message);
 
     Task CommentAdded(CommentAddedMessage message);
 
@@ -46,4 +62,7 @@ public interface IBoardClient
     Task AttachmentDeleted(AttachmentDeletedMessage message);
 
     Task NotificationReceived(NotificationMessage message);
+
+    // Sent to every member of a deleted team, wherever they are in the app.
+    Task TeamDeleted(TeamDeletedMessage message);
 }

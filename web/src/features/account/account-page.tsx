@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils/cn'
 import { formatLongDate } from '@/lib/utils/format'
 import { useTheme, type ThemePreference } from '@/lib/theme/theme-provider'
 import { ChangePasswordForm } from './change-password-form'
+import { ProfileForm } from './profile-form'
 
 const themes: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: 'Claro', icon: Sun },
@@ -31,6 +32,18 @@ export function AccountPage() {
               <p className="truncate text-sm text-muted">{user.email}</p>
               <p className="mt-1 text-xs text-faint">Miembro desde el {formatLongDate(user.createdAt)}</p>
             </div>
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Perfil</CardTitle>
+              <CardDescription>Tu nombre aparece en los tableros, tarjetas y comentarios.</CardDescription>
+            </div>
+          </CardHeader>
+          <div className="p-5">
+            <ProfileForm />
           </div>
         </Card>
 

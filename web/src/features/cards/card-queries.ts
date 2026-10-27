@@ -81,6 +81,58 @@ export function useRestoreCard(cardId: string, boardId: string) {
   return useCardMutation(cardId, boardId, () => cardsApi.restore(cardId))
 }
 
+/** The card's own query is left alone: refetching it would only 404 while its detail is still closing. */
+export function useDeleteCard(boardId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (cardId: string) => cardsApi.delete(cardId),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId), exact: true }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.allBoardCards(boardId) }),
+      ]),
+  })
+}
+
+export function useAddChecklistItem(cardId: string, boardId: string) {
+  return useCardMutation(cardId, boardId, (text: string) => cardsApi.addChecklistItem(cardId, text))
+}
+
+/** Checking an item off shows at once and is rolled back if the API refuses it. */
+export function useUpdateChecklistItem(cardId: string, boardId: string) {
+  const queryClient = useQueryClient()
+  const key = queryKeys.card(cardId)
+  return useMutation({
+    mutationFn: ({ itemId, ...changes }: { itemId: string; text?: string; isDone?: boolean }) =>
+      cardsApi.updateChecklistItem(cardId, itemId, changes),
+    onMutate: async ({ itemId, ...changes }) => {
+      await queryClient.cancelQueries({ queryKey: key, exact: true })
+      const previous = queryClient.getQueryData<CardDetail>(key)
+      if (previous) {
+        queryClient.setQueryData<CardDetail>(key, {
+          ...previous,
+          checklist: previous.checklist.map((item) => (item.id === itemId ? { ...item, ...changes } : item)),
+        })
+      }
+      return { previous }
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(key, context.previous)
+      }
+    },
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: key, exact: true }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId), exact: true }),
+      ]),
+  })
+}
+
+export function useDeleteChecklistItem(cardId: string, boardId: string) {
+  return useCardMutation(cardId, boardId, (itemId: string) => cardsApi.deleteChecklistItem(cardId, itemId))
+}
+
 export function useToggleAssignee(cardId: string, boardId: string) {
   return useCardMutation(cardId, boardId, ({ userId, assigned }: { userId: string; assigned: boolean }) =>
     assigned ? cardsApi.unassign(cardId, userId) : cardsApi.assign(cardId, userId),

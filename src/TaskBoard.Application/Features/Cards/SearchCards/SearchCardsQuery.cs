@@ -16,6 +16,7 @@ public sealed record SearchCardsQuery(
     string? Text,
     Guid? ColumnId,
     Guid? AssigneeId,
+    Guid? LabelId,
     CardPriority? Priority,
     DateTimeOffset? DueBefore,
     bool Archived,
@@ -36,4 +37,5 @@ public sealed record CardSearchResultResponse(
     CardPriority Priority,
     DateTimeOffset? DueDate,
     bool IsArchived,
-    IReadOnlyList<Guid> AssigneeIds);
+    IReadOnlyList<Guid> AssigneeIds,
+    IReadOnlyList<Guid> LabelIds);

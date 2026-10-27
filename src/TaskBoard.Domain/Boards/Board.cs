@@ -65,6 +65,18 @@ public sealed class Board : AggregateRoot
         Raise(new BoardRestoredEvent(Id));
     }
 
+    // Archiving first is the safety net: a board in use cannot be deleted by mistake.
+    public Result Delete()
+    {
+        if (!IsArchived)
+        {
+            return BoardErrors.NotArchived;
+        }
+
+        Raise(new BoardDeletedEvent(Id));
+        return Result.Success();
+    }
+
     public Result AddMember(Guid userId, BoardRole role)
     {
         if (IsArchived)
@@ -163,6 +175,27 @@ public sealed class Board : AggregateRoot
 
         column.MoveTo(PositionCalculator.Between(previous.Column?.Position, next.Column?.Position));
         Raise(new ColumnMovedEvent(Id, column.Id, column.Position));
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Removes the column; the database deletes its cards, archived ones included, with it.
+    /// </summary>
+    public Result DeleteColumn(Guid columnId)
+    {
+        if (IsArchived)
+        {
+            return BoardErrors.Archived;
+        }
+
+        var column = _columns.SingleOrDefault(c => c.Id == columnId);
+        if (column is null)
+        {
+            return BoardErrors.ColumnNotFound(columnId);
+        }
+
+        _columns.Remove(column);
+        Raise(new ColumnDeletedEvent(Id, column.Id));
         return Result.Success();
     }
 

@@ -166,6 +166,64 @@ public class CardEndpointsTests(TaskBoardApiFactory factory) : IClassFixture<Tas
         return cards.GetProperty("items").EnumerateArray().Select(c => c.GetProperty("id").GetGuid()).ToList();
     }
 
+    [Fact]
+    public async Task DeleteCard_OnlyOnceArchived_RemovesItForGood()
+    {
+        var owner = await _api.CreateUserAsync();
+        var teamId = await _api.CreateTeamAsync(owner);
+        var boardId = await _api.CreateBoardAsync(owner, teamId);
+        var columnId = await _api.CreateColumnAsync(owner, boardId);
+        var cardId = await _api.CreateCardAsync(owner, columnId);
+        (await owner.Client.PostAsJsonAsync($"/cards/{cardId}/comments", new { body = "Goes with the card" }))
+            .IsSuccessStatusCode.ShouldBeTrue();
+
+        var active = await owner.Client.DeleteAsync($"/cards/{cardId}");
+        active.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        (await ApiDriver.ReadErrorCodeAsync(active)).ShouldBe("Cards.NotArchived");
+
+        (await owner.Client.PostAsync($"/cards/{cardId}/archive", null)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        (await owner.Client.DeleteAsync($"/cards/{cardId}")).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        (await owner.Client.GetAsync($"/cards/{cardId}")).StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteColumn_DeletesItsCardsArchivedOnesIncluded()
+    {
+        var owner = await _api.CreateUserAsync();
+        var teamId = await _api.CreateTeamAsync(owner);
+        var boardId = await _api.CreateBoardAsync(owner, teamId);
+        var columnId = await _api.CreateColumnAsync(owner, boardId, "Doomed");
+        var keptColumnId = await _api.CreateColumnAsync(owner, boardId, "Kept");
+        var activeCardId = await _api.CreateCardAsync(owner, columnId);
+        var archivedCardId = await _api.CreateCardAsync(owner, columnId);
+        var keptCardId = await _api.CreateCardAsync(owner, keptColumnId);
+        (await owner.Client.PostAsync($"/cards/{archivedCardId}/archive", null)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        (await owner.Client.DeleteAsync($"/columns/{columnId}")).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        var board = await owner.Client.GetFromJsonAsync<JsonElement>($"/boards/{boardId}");
+        board.GetProperty("columns").EnumerateArray().ShouldHaveSingleItem().GetProperty("id").GetGuid().ShouldBe(keptColumnId);
+        (await GetBoardCardIdsAsync(owner, boardId)).ShouldBe([keptCardId]);
+        (await owner.Client.GetAsync($"/cards/{activeCardId}")).StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await owner.Client.GetAsync($"/cards/{archivedCardId}")).StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteColumn_ByEditor_IsForbidden()
+    {
+        var owner = await _api.CreateUserAsync();
+        var editor = await _api.CreateUserAsync();
+        var teamId = await _api.CreateTeamAsync(owner, editor);
+        var boardId = await _api.CreateBoardAsync(owner, teamId);
+        await _api.AddBoardMemberAsync(owner, boardId, editor, "Editor");
+        var columnId = await _api.CreateColumnAsync(owner, boardId);
+
+        var response = await editor.Client.DeleteAsync($"/columns/{columnId}");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
     private static async Task<List<Guid>> GetBoardCardIdsAsync(TestUser user, Guid boardId)
     {
         var board = await user.Client.GetFromJsonAsync<JsonElement>($"/boards/{boardId}");

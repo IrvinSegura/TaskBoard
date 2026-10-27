@@ -1,3 +1,4 @@
+import type { BoardLabel } from '@/features/labels/labels-api'
 import { api, type CreatedResponse } from '@/lib/api/client'
 
 // Ordered like the API's BoardRole enum, so roles compare by privilege.
@@ -28,6 +29,9 @@ export interface CardSummary {
   dueDate: string | null
   position: number
   assigneeIds: string[]
+  labelIds: string[]
+  /** Null when the card has no checklist. */
+  checklist: { done: number; total: number } | null
 }
 
 export interface BoardColumn {
@@ -42,6 +46,7 @@ export interface BoardDetail {
   name: string
   visibility: BoardVisibility
   members: BoardMember[]
+  labels: BoardLabel[]
   columns: BoardColumn[]
 }
 
@@ -60,6 +65,7 @@ export const boardsApi = {
   rename: (boardId: string, name: string) => api.patch(`/boards/${boardId}`, { name }),
   archive: (boardId: string) => api.post(`/boards/${boardId}/archive`),
   restore: (boardId: string) => api.post(`/boards/${boardId}/restore`),
+  delete: (boardId: string) => api.delete(`/boards/${boardId}`),
   addMember: (boardId: string, userId: string, role: BoardRole) =>
     api.post(`/boards/${boardId}/members`, { userId, role }),
   removeMember: (boardId: string, userId: string) => api.delete(`/boards/${boardId}/members/${userId}`),
@@ -68,6 +74,7 @@ export const boardsApi = {
   renameColumn: (columnId: string, name: string) => api.patch(`/columns/${columnId}`, { name }),
   moveColumn: (columnId: string, previousColumnId: string | null, nextColumnId: string | null) =>
     api.patch(`/columns/${columnId}/move`, { previousColumnId, nextColumnId }),
+  deleteColumn: (columnId: string) => api.delete(`/columns/${columnId}`),
 
   createCard: (columnId: string, title: string) =>
     api.post<CreatedResponse>(`/columns/${columnId}/cards`, { title, description: null }),

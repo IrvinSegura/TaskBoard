@@ -1,4 +1,5 @@
-import { LogOut, Menu, Monitor, Moon, Sun, UserRound } from 'lucide-react'
+import { CircleHelp, LogOut, Menu, Monitor, Moon, Search, Sun, UserRound } from 'lucide-react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { Avatar } from '@/components/ui/avatar'
@@ -19,6 +20,18 @@ export function Topbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
   const { preference, setPreference } = useTheme()
   const ThemeIcon = themeIcons[preference]
 
+  // Ctrl+K (Cmd+K on macOS) opens the search from anywhere.
+  useEffect(() => {
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        navigate('/search')
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [navigate])
+
   const onSignOut = async () => {
     try {
       await signOut()
@@ -34,7 +47,23 @@ export function Topbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
         <Menu />
       </Button>
 
+      <button
+        type="button"
+        onClick={() => navigate('/search')}
+        className="hidden h-9 w-full max-w-sm cursor-pointer items-center gap-2 rounded-lg border border-line bg-subtle px-3 text-sm text-muted transition-colors hover:border-line-strong hover:text-fg sm:flex"
+      >
+        <Search className="size-4" />
+        Buscar…
+        <kbd className="ml-auto rounded border border-line bg-surface px-1.5 font-sans text-[11px] text-faint">Ctrl K</kbd>
+      </button>
+
       <div className="ml-auto flex items-center gap-1">
+        <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => navigate('/search')} aria-label="Buscar">
+          <Search />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={() => navigate('/help')} aria-label="Ayuda" title="Ayuda">
+          <CircleHelp />
+        </Button>
         <Button
           variant="ghost"
           size="icon"

@@ -4,7 +4,7 @@ namespace TaskBoard.Application.Abstractions.Persistence;
 
 public interface ICardRepository
 {
-    // Loads the card with its assignments.
+    // Loads the card with its assignments and labels.
     Task<Card?> GetByIdAsync(Guid cardId, CancellationToken cancellationToken);
 
     Task<double?> GetLastPositionAsync(Guid columnId, CancellationToken cancellationToken);
@@ -16,4 +16,7 @@ public interface ICardRepository
     Task<IReadOnlyList<Card>> GetColumnCardsAsync(Guid columnId, CancellationToken cancellationToken);
 
     void Add(Card card);
+
+    // The database deletes the card's comments and attachments with it.
+    void Remove(Card card);
 }

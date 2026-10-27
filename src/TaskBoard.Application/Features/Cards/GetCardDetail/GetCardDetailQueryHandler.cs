@@ -51,6 +51,17 @@ internal sealed class GetCardDetailQueryHandler(IReadDbContext db) : IQueryHandl
                 a.CreatedAt))
             .ToListAsync(cancellationToken);
 
+        var labelIds = await db.Cards
+            .Where(c => c.Id == query.CardId)
+            .SelectMany(c => c.Labels.Select(l => l.LabelId))
+            .ToListAsync(cancellationToken);
+
+        var checklist = await db.ChecklistItems
+            .Where(i => i.CardId == query.CardId)
+            .OrderBy(i => i.Position)
+            .Select(i => new ChecklistItemResponse(i.Id, i.Text, i.IsDone, i.Position))
+            .ToListAsync(cancellationToken);
+
         var commentCount = await db.Comments.CountAsync(c => c.CardId == query.CardId, cancellationToken);
 
         return new CardDetailResponse(
@@ -67,6 +78,8 @@ internal sealed class GetCardDetailQueryHandler(IReadDbContext db) : IQueryHandl
             card.CreatedAt,
             commentCount,
             assignees,
-            attachments);
+            attachments,
+            labelIds,
+            checklist);
     }
 }

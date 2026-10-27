@@ -1,11 +1,13 @@
 using TaskBoard.Domain.Cards.Events;
 using TaskBoard.Domain.Common;
+using TaskBoard.Domain.Labels;
 
 namespace TaskBoard.Domain.Cards;
 
 public sealed class Card : AggregateRoot
 {
     private readonly List<CardAssignment> _assignments = [];
+    private readonly List<CardLabel> _labels = [];
 
     private Card()
     {
@@ -30,6 +32,8 @@ public sealed class Card : AggregateRoot
     public Guid CreatedById { get; private set; }
 
     public IReadOnlyCollection<CardAssignment> Assignments => _assignments.AsReadOnly();
+
+    public IReadOnlyCollection<CardLabel> Labels => _labels.AsReadOnly();
 
     public static Card Create(
         Guid boardId,
@@ -143,6 +147,58 @@ public sealed class Card : AggregateRoot
 
         IsArchived = true;
         Raise(new CardArchivedEvent(Id, BoardId));
+    }
+
+    public Result AddLabel(Label label)
+    {
+        if (IsArchived)
+        {
+            return CardErrors.Archived;
+        }
+
+        if (label.BoardId != BoardId)
+        {
+            return CardErrors.LabelNotOnBoard;
+        }
+
+        if (_labels.Any(l => l.LabelId == label.Id))
+        {
+            return CardErrors.LabelAlreadyAdded;
+        }
+
+        _labels.Add(new CardLabel(Id, label.Id));
+        Raise(new CardLabelsChangedEvent(Id, BoardId));
+        return Result.Success();
+    }
+
+    public Result RemoveLabel(Guid labelId)
+    {
+        if (IsArchived)
+        {
+            return CardErrors.Archived;
+        }
+
+        var cardLabel = _labels.SingleOrDefault(l => l.LabelId == labelId);
+        if (cardLabel is null)
+        {
+            return CardErrors.LabelNotAdded;
+        }
+
+        _labels.Remove(cardLabel);
+        Raise(new CardLabelsChangedEvent(Id, BoardId));
+        return Result.Success();
+    }
+
+    // Only archived cards can be deleted, so a card in use is never lost by mistake.
+    public Result Delete()
+    {
+        if (!IsArchived)
+        {
+            return CardErrors.NotArchived;
+        }
+
+        Raise(new CardDeletedEvent(Id, BoardId));
+        return Result.Success();
     }
 
     // Returns to the column and position it had when archived.

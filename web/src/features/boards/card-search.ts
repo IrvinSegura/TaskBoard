@@ -11,6 +11,7 @@ export interface CardSearchResult {
   dueDate: string | null
   isArchived: boolean
   assigneeIds: string[]
+  labelIds: string[]
 }
 
 export type DueFilter = 'overdue' | 'week' | null
@@ -19,13 +20,20 @@ export interface CardFilters {
   text: string
   priority: CardPriority | null
   assigneeId: string | null
+  labelId: string | null
   due: DueFilter
 }
 
-export const emptyFilters: CardFilters = { text: '', priority: null, assigneeId: null, due: null }
+export const emptyFilters: CardFilters = { text: '', priority: null, assigneeId: null, labelId: null, due: null }
 
 export function hasActiveFilters(filters: CardFilters): boolean {
-  return filters.text.trim() !== '' || filters.priority !== null || filters.assigneeId !== null || filters.due !== null
+  return (
+    filters.text.trim() !== '' ||
+    filters.priority !== null ||
+    filters.assigneeId !== null ||
+    filters.labelId !== null ||
+    filters.due !== null
+  )
 }
 
 /** The API caps pageSize at 200; a board with more matching cards shows the first 200. */
@@ -47,6 +55,7 @@ export function searchCards(boardId: string, filters: Partial<CardFilters> & { a
       text: filters.text?.trim(),
       priority: filters.priority,
       assigneeId: filters.assigneeId,
+      labelId: filters.labelId,
       dueBefore: dueBefore(filters.due ?? null),
       archived: filters.archived,
       page: filters.page,

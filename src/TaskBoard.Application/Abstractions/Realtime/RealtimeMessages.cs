@@ -9,6 +9,8 @@ public sealed record BoardArchivedMessage(Guid BoardId);
 
 public sealed record BoardRestoredMessage(Guid BoardId);
 
+public sealed record BoardDeletedMessage(Guid BoardId);
+
 public sealed record BoardMemberRemovedMessage(Guid BoardId, Guid UserId);
 
 public sealed record ColumnCreatedMessage(Guid ColumnId, string Name, double Position);
@@ -16,6 +18,8 @@ public sealed record ColumnCreatedMessage(Guid ColumnId, string Name, double Pos
 public sealed record ColumnRenamedMessage(Guid ColumnId, string Name);
 
 public sealed record ColumnMovedMessage(Guid ColumnId, double Position);
+
+public sealed record ColumnDeletedMessage(Guid ColumnId);
 
 public sealed record CardCreatedMessage(Guid CardId, Guid ColumnId, string Title, double Position);
 
@@ -30,11 +34,19 @@ public sealed record CardMovedMessage(Guid CardId, Guid FromColumnId, Guid ToCol
 
 public sealed record CardArchivedMessage(Guid CardId);
 
+public sealed record CardDeletedMessage(Guid CardId);
+
 public sealed record CardRestoredMessage(Guid CardId, Guid ColumnId, string Title, double Position);
 
 public sealed record CardAssignedMessage(Guid CardId, Guid UserId);
 
 public sealed record CardUnassignedMessage(Guid CardId, Guid UserId);
+
+public sealed record LabelsChangedMessage(Guid BoardId);
+
+public sealed record CardLabelsChangedMessage(Guid CardId);
+
+public sealed record ChecklistChangedMessage(Guid CardId);
 
 public sealed record CommentAddedMessage(Guid CommentId, Guid CardId, Guid AuthorId, string Body);
 
@@ -45,6 +57,8 @@ public sealed record CommentDeletedMessage(Guid CommentId, Guid CardId);
 public sealed record AttachmentAddedMessage(Guid AttachmentId, Guid CardId, string FileName);
 
 public sealed record AttachmentDeletedMessage(Guid AttachmentId, Guid CardId);
+
+public sealed record TeamDeletedMessage(Guid TeamId, string Name);
 
 public sealed record NotificationMessage(
     Guid NotificationId,

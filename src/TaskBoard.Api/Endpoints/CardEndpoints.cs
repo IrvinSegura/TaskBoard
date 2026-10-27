@@ -4,6 +4,7 @@ using TaskBoard.Application.Common.Paging;
 using TaskBoard.Application.Features.Cards.ArchiveCard;
 using TaskBoard.Application.Features.Cards.AssignCardMember;
 using TaskBoard.Application.Features.Cards.CreateCard;
+using TaskBoard.Application.Features.Cards.DeleteCard;
 using TaskBoard.Application.Features.Cards.GetCardDetail;
 using TaskBoard.Application.Features.Cards.MoveCard;
 using TaskBoard.Application.Features.Cards.RestoreCard;
@@ -40,6 +41,7 @@ internal sealed class CardEndpoints : IEndpoint
                 request.Text,
                 request.ColumnId,
                 request.AssigneeId,
+                request.LabelId,
                 request.Priority,
                 request.DueBefore,
                 request.Archived ?? false,
@@ -110,6 +112,15 @@ internal sealed class CardEndpoints : IEndpoint
             return result.ToHttpResult();
         });
 
+        group.MapDelete("/cards/{cardId:guid}", async (
+            Guid cardId,
+            ICommandHandler<DeleteCardCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new DeleteCardCommand(cardId), cancellationToken);
+            return result.ToHttpResult();
+        });
+
         group.MapDelete("/cards/{cardId:guid}/assignees/{userId:guid}", async (
             Guid cardId,
             Guid userId,
@@ -126,6 +137,7 @@ internal sealed class CardEndpoints : IEndpoint
         string? Text,
         Guid? ColumnId,
         Guid? AssigneeId,
+        Guid? LabelId,
         CardPriority? Priority,
         DateTimeOffset? DueBefore,
         bool? Archived,

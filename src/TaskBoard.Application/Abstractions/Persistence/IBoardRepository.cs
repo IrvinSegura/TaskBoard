@@ -18,4 +18,7 @@ public interface IBoardRepository
     Task<IReadOnlyList<Guid>> GetTeamBoardIdsAsync(Guid teamId, CancellationToken cancellationToken);
 
     void Add(Board board);
+
+    // The database deletes the board's columns, cards, comments and attachments with it.
+    void Remove(Board board);
 }

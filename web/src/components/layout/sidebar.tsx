@@ -1,4 +1,16 @@
-import { Bell, ChevronRight, Home, Plus, Users } from 'lucide-react'
+import {
+  Activity,
+  Archive,
+  Bell,
+  CalendarDays,
+  ChartColumn,
+  ChevronRight,
+  Home,
+  ListChecks,
+  Plus,
+  Star,
+  Users,
+} from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { Logo } from '@/components/brand/logo'
@@ -18,6 +30,13 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-muted-surface hover:text-fg',
   )
 
+const workspaceLinks = [
+  { to: '/teams', label: 'Equipos', icon: Users, end: true },
+  { to: '/activity', label: 'Actividad', icon: Activity, end: false },
+  { to: '/reports', label: 'Reportes', icon: ChartColumn, end: false },
+  { to: '/archive', label: 'Archivados', icon: Archive, end: false },
+]
+
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const teams = useTeams()
   const unread = useUnreadCount()
@@ -34,6 +53,18 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           <Home />
           Inicio
         </NavLink>
+        <NavLink to="/my-tasks" className={navLinkClass} onClick={onNavigate}>
+          <ListChecks />
+          Mis tareas
+        </NavLink>
+        <NavLink to="/calendar" className={navLinkClass} onClick={onNavigate}>
+          <CalendarDays />
+          Calendario
+        </NavLink>
+        <NavLink to="/favorites" className={navLinkClass} onClick={onNavigate}>
+          <Star />
+          Favoritos
+        </NavLink>
         <NavLink to="/notifications" className={navLinkClass} onClick={onNavigate}>
           <Bell />
           Notificaciones
@@ -43,10 +74,15 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             </span>
           )}
         </NavLink>
-        <NavLink to="/teams" end className={navLinkClass} onClick={onNavigate}>
-          <Users />
-          Equipos
-        </NavLink>
+      </nav>
+
+      <nav className="mt-3 space-y-0.5 border-t border-line px-3 pt-3" aria-label="Espacio de trabajo">
+        {workspaceLinks.map(({ to, label, icon: Icon, end }) => (
+          <NavLink key={to} to={to} end={end} className={navLinkClass} onClick={onNavigate}>
+            <Icon />
+            {label}
+          </NavLink>
+        ))}
       </nav>
 
       <div className="mt-6 flex items-center justify-between px-5">

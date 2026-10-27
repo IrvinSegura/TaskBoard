@@ -1,6 +1,7 @@
 using TaskBoard.Api.Extensions;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Features.Columns.CreateColumn;
+using TaskBoard.Application.Features.Columns.DeleteColumn;
 using TaskBoard.Application.Features.Columns.MoveColumn;
 using TaskBoard.Application.Features.Columns.RenameColumn;
 
@@ -40,6 +41,15 @@ internal sealed class ColumnEndpoints : IEndpoint
         {
             var command = new MoveColumnCommand(columnId, request.PreviousColumnId, request.NextColumnId);
             var result = await handler.Handle(command, cancellationToken);
+            return result.ToHttpResult();
+        });
+
+        group.MapDelete("/columns/{columnId:guid}", async (
+            Guid columnId,
+            ICommandHandler<DeleteColumnCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new DeleteColumnCommand(columnId), cancellationToken);
             return result.ToHttpResult();
         });
     }

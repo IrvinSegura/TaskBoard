@@ -1,6 +1,7 @@
 import { Search, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Spinner } from '@/components/ui/spinner'
+import type { BoardLabel } from '@/features/labels/labels-api'
 import { cn } from '@/lib/utils/cn'
 import { cardPriorities, type BoardMember, type CardPriority } from './boards-api'
 import { priorityMeta } from './card-meta'
@@ -10,6 +11,7 @@ interface BoardFiltersProps {
   filters: CardFilters
   onChange: (filters: CardFilters) => void
   members: BoardMember[]
+  labels: BoardLabel[]
   meId: string
   searching: boolean
   canEdit: boolean
@@ -18,7 +20,7 @@ interface BoardFiltersProps {
 const compactSelect =
   'h-8 cursor-pointer rounded-lg border border-line bg-surface px-2.5 text-[13px] text-fg shadow-card hover:border-line-strong focus:border-primary focus:ring-3 focus:ring-ring focus:outline-none'
 
-export function BoardFilters({ filters, onChange, members, meId, searching, canEdit }: BoardFiltersProps) {
+export function BoardFilters({ filters, onChange, members, labels, meId, searching, canEdit }: BoardFiltersProps) {
   const [text, setText] = useState(filters.text)
 
   // Debounced so typing does not send one search per key.
@@ -76,6 +78,22 @@ export function BoardFilters({ filters, onChange, members, meId, searching, canE
             </option>
           ))}
       </select>
+
+      {labels.length > 0 && (
+        <select
+          aria-label="Filtrar por etiqueta"
+          value={filters.labelId ?? ''}
+          onChange={(event) => onChange({ ...filters, labelId: event.target.value || null })}
+          className={cn(compactSelect, filters.labelId && 'border-primary text-primary')}
+        >
+          <option value="">Etiqueta</option>
+          {labels.map((label) => (
+            <option key={label.id} value={label.id}>
+              {label.name}
+            </option>
+          ))}
+        </select>
+      )}
 
       <select
         aria-label="Filtrar por fecha límite"

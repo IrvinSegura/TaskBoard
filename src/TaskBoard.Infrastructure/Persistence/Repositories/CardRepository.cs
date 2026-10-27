@@ -9,6 +9,8 @@ internal sealed class CardRepository(ApplicationDbContext db) : ICardRepository
     public Task<Card?> GetByIdAsync(Guid cardId, CancellationToken cancellationToken) =>
         db.Cards
             .Include(c => c.Assignments)
+            .Include(c => c.Labels)
+            .AsSplitQuery()
             .SingleOrDefaultAsync(c => c.Id == cardId, cancellationToken);
 
     public Task<double?> GetLastPositionAsync(Guid columnId, CancellationToken cancellationToken) =>
@@ -29,4 +31,6 @@ internal sealed class CardRepository(ApplicationDbContext db) : ICardRepository
             .ToListAsync(cancellationToken);
 
     public void Add(Card card) => db.Cards.Add(card);
+
+    public void Remove(Card card) => db.Cards.Remove(card);
 }

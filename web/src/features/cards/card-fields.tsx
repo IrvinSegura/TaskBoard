@@ -10,6 +10,7 @@ import { Input, Select } from '@/components/ui/input'
 import { useMoveCard } from '@/features/boards/board-queries'
 import { cardPriorities, type BoardDetail, type CardPriority } from '@/features/boards/boards-api'
 import { priorityMeta } from '@/features/boards/card-meta'
+import { LabelPicker } from '@/features/labels/label-picker'
 import { errorMessage } from '@/lib/api/api-error'
 import { queryKeys } from '@/lib/api/query-keys'
 import { fromDateInputValue, toDateInputValue } from '@/lib/utils/format'
@@ -107,6 +108,16 @@ export function CardFields({ card, board, canEdit }: CardFieldsProps) {
             </Button>
           )}
         </div>
+      </FieldBlock>
+
+      <FieldBlock label="Etiquetas">
+        <LabelPicker
+          cardId={card.id}
+          boardId={board.id}
+          labels={board.labels}
+          labelIds={card.labelIds}
+          canEdit={canEdit}
+        />
       </FieldBlock>
 
       <FieldBlock label="Asignados">

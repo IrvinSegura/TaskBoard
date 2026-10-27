@@ -3,8 +3,10 @@ using TaskBoard.Application.Abstractions.Persistence;
 using TaskBoard.Domain.Attachments;
 using TaskBoard.Domain.Boards;
 using TaskBoard.Domain.Cards;
+using TaskBoard.Domain.Checklists;
 using TaskBoard.Domain.Comments;
 using TaskBoard.Domain.Common;
+using TaskBoard.Domain.Labels;
 using TaskBoard.Domain.Notifications;
 using TaskBoard.Domain.Teams;
 using TaskBoard.Domain.Users;
@@ -33,11 +35,17 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
     public DbSet<CardAssignment> CardAssignments => Set<CardAssignment>();
 
+    public DbSet<CardLabel> CardLabels => Set<CardLabel>();
+
     public DbSet<Comment> Comments => Set<Comment>();
 
     public DbSet<Attachment> Attachments => Set<Attachment>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<Label> Labels => Set<Label>();
+
+    public DbSet<ChecklistItem> ChecklistItems => Set<ChecklistItem>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
@@ -60,6 +68,10 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     IQueryable<Attachment> IReadDbContext.Attachments => Attachments.AsNoTracking();
 
     IQueryable<Notification> IReadDbContext.Notifications => Notifications.AsNoTracking();
+
+    IQueryable<Label> IReadDbContext.Labels => Labels.AsNoTracking();
+
+    IQueryable<ChecklistItem> IReadDbContext.ChecklistItems => ChecklistItems.AsNoTracking();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

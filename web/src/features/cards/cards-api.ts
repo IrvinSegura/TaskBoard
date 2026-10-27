@@ -30,6 +30,15 @@ export interface CardDetail {
   commentCount: number
   assignees: CardAssignee[]
   attachments: CardAttachment[]
+  labelIds: string[]
+  checklist: ChecklistItem[]
+}
+
+export interface ChecklistItem {
+  id: string
+  text: string
+  isDone: boolean
+  position: number
 }
 
 export interface CardComment {
@@ -55,8 +64,15 @@ export const cardsApi = {
   update: (cardId: string, request: UpdateCardRequest) => api.put(`/cards/${cardId}`, request),
   archive: (cardId: string) => api.post(`/cards/${cardId}/archive`),
   restore: (cardId: string) => api.post(`/cards/${cardId}/restore`),
+  delete: (cardId: string) => api.delete(`/cards/${cardId}`),
   assign: (cardId: string, userId: string) => api.post(`/cards/${cardId}/assignees`, { userId }),
   unassign: (cardId: string, userId: string) => api.delete(`/cards/${cardId}/assignees/${userId}`),
+
+  addChecklistItem: (cardId: string, text: string) =>
+    api.post<CreatedResponse>(`/cards/${cardId}/checklist`, { text }),
+  updateChecklistItem: (cardId: string, itemId: string, changes: { text?: string; isDone?: boolean }) =>
+    api.patch(`/cards/${cardId}/checklist/${itemId}`, changes),
+  deleteChecklistItem: (cardId: string, itemId: string) => api.delete(`/cards/${cardId}/checklist/${itemId}`),
 
   comments: (cardId: string, page: number) =>
     api.get<PagedResponse<CardComment>>(`/cards/${cardId}/comments`, {

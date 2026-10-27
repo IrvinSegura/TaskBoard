@@ -1,4 +1,4 @@
-import { Archive, ChevronRight, LayoutGrid, Users } from 'lucide-react'
+import { Activity, Archive, ChevronRight, LayoutGrid, Settings, Users } from 'lucide-react'
 import { Link, NavLink, Outlet, useOutletContext, useParams } from 'react-router'
 import { PageContainer, PageHeader } from '@/components/layout/page-header'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback'
@@ -12,6 +12,8 @@ const tabs = [
   { to: '', label: 'Tableros', icon: LayoutGrid, end: true },
   { to: 'archived', label: 'Archivados', icon: Archive, end: false },
   { to: 'members', label: 'Miembros', icon: Users, end: false },
+  { to: 'activity', label: 'Actividad', icon: Activity, end: false },
+  { to: 'settings', label: 'Configuración', icon: Settings, end: false },
 ]
 
 /** Header and tabs of a team; the tab content comes from the child routes. */
@@ -73,29 +75,35 @@ export function TeamLayout() {
         actions={<TeamRoleBadge role={team.myRole} />}
       />
 
-      <nav className="mt-8 flex gap-0.5 border-b border-line sm:gap-1" aria-label="Secciones del equipo">
-        {tabs.map(({ to, label, icon: Icon, end }) => (
-          <NavLink
-            key={label}
-            to={to}
-            end={end}
-            className={({ isActive }) =>
-              cn(
-                '-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-2 pt-1 pb-2.5 text-sm font-medium transition-colors sm:gap-2 sm:px-3',
-                isActive ? 'border-primary text-fg' : 'border-transparent text-muted hover:text-fg',
-              )
-            }
-          >
-            <Icon className="size-4" />
-            {label}
-            {label === 'Miembros' && (
-              <span className="rounded-full bg-muted-surface px-1.5 text-xs text-muted tabular-nums">
-                {team.memberCount}
-              </span>
-            )}
-          </NavLink>
-        ))}
-      </nav>
+      {/* The nav overlaps the border by 1px so the active tab's underline sits on it while the tabs scroll. */}
+      <div className="mt-8 border-b border-line">
+        <nav
+          className="scrollbar-thin -mb-px flex gap-0.5 overflow-x-auto overflow-y-hidden sm:gap-1"
+          aria-label="Secciones del equipo"
+        >
+          {tabs.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={label}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                cn(
+                  'flex shrink-0 items-center gap-1.5 border-b-2 px-2 pt-1 pb-2.5 text-sm font-medium transition-colors sm:gap-2 sm:px-3',
+                  isActive ? 'border-primary text-fg' : 'border-transparent text-muted hover:text-fg',
+                )
+              }
+            >
+              <Icon className="size-4" />
+              {label}
+              {label === 'Miembros' && (
+                <span className="rounded-full bg-muted-surface px-1.5 text-xs text-muted tabular-nums">
+                  {team.memberCount}
+                </span>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
 
       <div className="mt-6">
         <Outlet context={team satisfies TeamSummary} />

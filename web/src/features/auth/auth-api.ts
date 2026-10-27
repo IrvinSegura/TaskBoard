@@ -25,5 +25,6 @@ export const authApi = {
   register: (request: RegisterRequest) => api.post<{ id: string }>('/auth/register', request, { auth: false }),
   logout: () => api.post('/auth/logout', undefined, { auth: false }),
   me: () => api.get<CurrentUser>('/me'),
+  updateProfile: (displayName: string) => api.patch('/me', { displayName }),
   changePassword: (request: ChangePasswordRequest) => api.post('/me/password', request),
 }

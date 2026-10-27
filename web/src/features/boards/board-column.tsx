@@ -1,15 +1,18 @@
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, MoreHorizontal, Pencil } from 'lucide-react'
+import { GripVertical, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { useState, type KeyboardEvent } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { DropdownMenu, MenuItem } from '@/components/ui/dropdown-menu'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { DropdownMenu, MenuItem, MenuSeparator } from '@/components/ui/dropdown-menu'
+import { useCurrentUser } from '@/features/auth/auth-provider'
+import type { BoardLabel } from '@/features/labels/labels-api'
 import { errorMessage } from '@/lib/api/api-error'
 import { cn } from '@/lib/utils/cn'
 import { AddCardForm } from './add-card-form'
 import { BoardCard } from './board-card'
-import { useRenameColumn } from './board-queries'
+import { useDeleteColumn, useRenameColumn } from './board-queries'
 import type { BoardColumn as Column, BoardMember, CardSummary } from './boards-api'
 
 interface BoardColumnProps {
@@ -18,6 +21,7 @@ interface BoardColumnProps {
   /** The cards to show, already filtered when a search is active. */
   cards: CardSummary[]
   members: BoardMember[]
+  labels: BoardLabel[]
   canEdit: boolean
   dragEnabled: boolean
   filtered: boolean
@@ -29,6 +33,7 @@ export function BoardColumn({
   column,
   cards,
   members,
+  labels,
   canEdit,
   dragEnabled,
   filtered,
@@ -63,7 +68,7 @@ export function BoardColumn({
             <GripVertical className="size-4" />
           </button>
         )}
-        <ColumnTitle boardId={boardId} column={column} canEdit={canEdit} />
+        <ColumnTitle boardId={boardId} column={column} members={members} canEdit={canEdit} />
         <span className="ml-1 rounded-full bg-muted-surface px-1.5 text-xs font-medium text-muted tabular-nums">
           {filtered ? `${cards.length}/${column.cards.length}` : column.cards.length}
         </span>
@@ -77,6 +82,7 @@ export function BoardColumn({
               card={card}
               columnId={column.id}
               members={members}
+              labels={labels}
               draggable={dragEnabled}
               onOpen={onOpenCard}
             />
@@ -98,10 +104,34 @@ export function BoardColumn({
   )
 }
 
-function ColumnTitle({ boardId, column, canEdit }: { boardId: string; column: Column; canEdit: boolean }) {
+interface ColumnTitleProps {
+  boardId: string
+  column: Column
+  members: BoardMember[]
+  canEdit: boolean
+}
+
+function ColumnTitle({ boardId, column, members, canEdit }: ColumnTitleProps) {
+  const me = useCurrentUser()
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(column.name)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const rename = useRenameColumn(boardId)
+  const remove = useDeleteColumn(boardId)
+  // Deleting takes the column's cards with it, so the API keeps it for board admins.
+  const canDelete = canEdit && members.some((m) => m.userId === me.id && m.role === 'Admin')
+
+  // mutateAsync rather than mutate callbacks: the board refetch removes this column, and with it this component,
+  // before per-call callbacks would run.
+  const onDelete = async () => {
+    try {
+      await remove.mutateAsync(column.id)
+      toast.success(`Se eliminó la columna «${column.name}»`)
+    } catch (error) {
+      toast.error(errorMessage(error))
+    }
+  }
+  const cardCount = column.cards.length
 
   const save = () => {
     const trimmed = name.trim()
@@ -172,8 +202,27 @@ function ColumnTitle({ boardId, column, canEdit }: { boardId: string; column: Co
           >
             Renombrar columna
           </MenuItem>
+          {canDelete && <MenuSeparator />}
+          {canDelete && (
+            <MenuItem icon={<Trash2 />} destructive onSelect={() => setConfirmDelete(true)}>
+              Eliminar columna
+            </MenuItem>
+          )}
         </DropdownMenu>
       )}
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={`¿Eliminar la columna «${column.name}»?`}
+        description={
+          cardCount > 0
+            ? `También se eliminarán ${cardCount === 1 ? 'su tarjeta' : `sus ${cardCount} tarjetas`} y las archivadas que tenga, con sus comentarios y adjuntos. No se puede deshacer.`
+            : 'También se eliminarán las tarjetas archivadas que tenga. No se puede deshacer.'
+        }
+        confirmLabel="Eliminar columna"
+        loading={remove.isPending}
+        onConfirm={() => void onDelete()}
+      />
     </>
   )
 }

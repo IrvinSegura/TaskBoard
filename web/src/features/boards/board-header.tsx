@@ -12,6 +12,7 @@ import { errorMessage } from '@/lib/api/api-error'
 import { useRealtime } from '@/lib/realtime/realtime-provider'
 import { cn } from '@/lib/utils/cn'
 import { BoardMembersDialog } from './board-members-dialog'
+import { BoardTabs } from './board-tabs'
 import { boardRoleLabels, type BoardPermissions } from './board-permissions'
 import { useArchiveBoard, useRenameBoard, useRestoreBoard, type BoardLocation } from './board-queries'
 import { VisibilityLabel } from './board-tile'
@@ -174,6 +175,8 @@ export function BoardHeader({ board, location, permissions }: BoardHeaderProps) 
           </DropdownMenu>
         </div>
       </div>
+
+      <BoardTabs boardId={board.id} />
 
       {location && (
         <BoardMembersDialog

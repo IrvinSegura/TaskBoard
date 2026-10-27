@@ -85,6 +85,67 @@ public class TeamEndpointsTests(TaskBoardApiFactory factory) : IClassFixture<Tas
     }
 
     [Fact]
+    public async Task RenameTeam_ByAdmin_ChangesTheNameInTheTeamList()
+    {
+        var owner = await _api.CreateUserAsync();
+        var admin = await _api.CreateUserAsync();
+        var teamId = await _api.CreateTeamAsync(owner);
+        (await owner.Client.PostAsJsonAsync($"/teams/{teamId}/members", new { email = admin.Email, role = "Admin" }))
+            .StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        var response = await admin.Client.PatchAsJsonAsync($"/teams/{teamId}", new { name = "Renamed" });
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        var teams = await owner.Client.GetFromJsonAsync<JsonElement>("/teams");
+        teams.EnumerateArray().Single(t => t.GetProperty("id").GetGuid() == teamId)
+            .GetProperty("name").GetString().ShouldBe("Renamed");
+    }
+
+    [Fact]
+    public async Task RenameTeam_ByPlainMember_IsForbidden()
+    {
+        var owner = await _api.CreateUserAsync();
+        var member = await _api.CreateUserAsync();
+        var teamId = await _api.CreateTeamAsync(owner, member);
+
+        var response = await member.Client.PatchAsJsonAsync($"/teams/{teamId}", new { name = "Renamed" });
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task DeleteTeam_ByOwner_RemovesTheTeamAndItsBoards()
+    {
+        var owner = await _api.CreateUserAsync();
+        var member = await _api.CreateUserAsync();
+        var teamId = await _api.CreateTeamAsync(owner, member);
+        var boardId = await _api.CreateBoardAsync(owner, teamId, visibility: "Team");
+        var columnId = await _api.CreateColumnAsync(owner, boardId);
+        await _api.CreateCardAsync(owner, columnId);
+
+        var response = await owner.Client.DeleteAsync($"/teams/{teamId}");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        (await member.Client.GetFromJsonAsync<JsonElement>("/teams")).EnumerateArray().ShouldBeEmpty();
+        (await owner.Client.GetAsync($"/boards/{boardId}")).StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteTeam_ByAdmin_IsForbidden()
+    {
+        var owner = await _api.CreateUserAsync();
+        var admin = await _api.CreateUserAsync();
+        var teamId = await _api.CreateTeamAsync(owner);
+        (await owner.Client.PostAsJsonAsync($"/teams/{teamId}/members", new { email = admin.Email, role = "Admin" }))
+            .StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        var response = await admin.Client.DeleteAsync($"/teams/{teamId}");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        (await ApiDriver.ReadErrorCodeAsync(response)).ShouldBe("Teams.OnlyOwnerCanDelete");
+    }
+
+    [Fact]
     public async Task AddMember_InvalidEmail_ReturnsBadRequest()
     {
         var owner = await _api.CreateUserAsync();

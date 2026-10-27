@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:demo": "node ../scripts/seed-demo.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

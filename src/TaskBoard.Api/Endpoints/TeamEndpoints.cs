@@ -3,9 +3,11 @@ using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Features.Teams.AddTeamMember;
 using TaskBoard.Application.Features.Teams.ChangeTeamMemberRole;
 using TaskBoard.Application.Features.Teams.CreateTeam;
+using TaskBoard.Application.Features.Teams.DeleteTeam;
 using TaskBoard.Application.Features.Teams.GetMyTeams;
 using TaskBoard.Application.Features.Teams.GetTeamMembers;
 using TaskBoard.Application.Features.Teams.RemoveTeamMember;
+using TaskBoard.Application.Features.Teams.RenameTeam;
 using TaskBoard.Domain.Teams;
 
 namespace TaskBoard.Api.Endpoints;
@@ -31,6 +33,25 @@ internal sealed class TeamEndpoints : IEndpoint
         {
             var result = await handler.Handle(command, cancellationToken);
             return result.ToHttpResult(id => Results.Created($"/teams/{id}", new { id }));
+        });
+
+        group.MapPatch("/{teamId:guid}", async (
+            Guid teamId,
+            RenameTeamRequest request,
+            ICommandHandler<RenameTeamCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new RenameTeamCommand(teamId, request.Name), cancellationToken);
+            return result.ToHttpResult();
+        });
+
+        group.MapDelete("/{teamId:guid}", async (
+            Guid teamId,
+            ICommandHandler<DeleteTeamCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new DeleteTeamCommand(teamId), cancellationToken);
+            return result.ToHttpResult();
         });
 
         group.MapGet("/{teamId:guid}/members", async (
@@ -75,6 +96,8 @@ internal sealed class TeamEndpoints : IEndpoint
             return result.ToHttpResult();
         });
     }
+
+    internal sealed record RenameTeamRequest(string Name);
 
     internal sealed record AddTeamMemberRequest(string Email, TeamRole Role);
 

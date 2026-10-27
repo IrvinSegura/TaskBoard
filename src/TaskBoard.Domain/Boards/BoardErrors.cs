@@ -7,6 +7,9 @@ public static class BoardErrors
     public static readonly Error Archived =
         Error.Failure("Boards.Archived", "The board is archived and cannot be modified.");
 
+    public static readonly Error NotArchived =
+        Error.Failure("Boards.NotArchived", "Archive the board before deleting it.");
+
     public static readonly Error AlreadyMember =
         Error.Conflict("Boards.AlreadyMember", "The user is already a member of the board.");
 

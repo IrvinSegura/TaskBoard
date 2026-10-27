@@ -27,11 +27,24 @@ internal sealed class GetBoardDetailQueryHandler(IReadDbContext db)
             select new BoardMemberResponse(user.Id, user.DisplayName, member.Role))
             .ToListAsync(cancellationToken);
 
+        var labels = await db.Labels
+            .Where(l => l.BoardId == query.BoardId)
+            .OrderBy(l => l.Name)
+            .Select(l => new LabelResponse(l.Id, l.Name, l.Color))
+            .ToListAsync(cancellationToken);
+
         var columns = await db.Columns
             .Where(c => c.BoardId == query.BoardId)
             .OrderBy(c => c.Position)
             .Select(c => new { c.Id, c.Name, c.Position })
             .ToListAsync(cancellationToken);
+
+        // One grouped query for the whole board instead of a count per card.
+        var checklists = await db.ChecklistItems
+            .Where(i => i.BoardId == query.BoardId)
+            .GroupBy(i => i.CardId)
+            .Select(g => new { CardId = g.Key, Done = g.Count(i => i.IsDone), Total = g.Count() })
+            .ToDictionaryAsync(x => x.CardId, x => new ChecklistProgressResponse(x.Done, x.Total), cancellationToken);
 
         var cards = await db.Cards
             .Where(c => c.BoardId == query.BoardId && !c.IsArchived)
@@ -39,23 +52,34 @@ internal sealed class GetBoardDetailQueryHandler(IReadDbContext db)
             .Select(c => new
             {
                 c.ColumnId,
-                Card = new CardSummaryResponse(
-                    c.Id,
-                    c.Title,
-                    c.Priority,
-                    c.DueDate,
-                    c.Position,
-                    c.Assignments.Select(a => a.UserId).ToList())
+                c.Id,
+                c.Title,
+                c.Priority,
+                c.DueDate,
+                c.Position,
+                AssigneeIds = c.Assignments.Select(a => a.UserId).ToList(),
+                LabelIds = c.Labels.Select(l => l.LabelId).ToList()
             })
             .ToListAsync(cancellationToken);
 
-        var cardsByColumn = cards.ToLookup(x => x.ColumnId, x => x.Card);
+        var cardsByColumn = cards.ToLookup(
+            x => x.ColumnId,
+            x => new CardSummaryResponse(
+                x.Id,
+                x.Title,
+                x.Priority,
+                x.DueDate,
+                x.Position,
+                x.AssigneeIds,
+                x.LabelIds,
+                checklists.GetValueOrDefault(x.Id)));
 
         return new BoardDetailResponse(
             board.Id,
             board.Name,
             board.Visibility,
             members,
+            labels,
             columns.Select(c => new ColumnResponse(c.Id, c.Name, c.Position, cardsByColumn[c.Id].ToList())).ToList());
     }
 }
