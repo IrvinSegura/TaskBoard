@@ -5,6 +5,7 @@ import { cardsApi } from '@/features/cards/cards-api'
 import { errorMessage } from '@/lib/api/api-error'
 import { queryKeys } from '@/lib/api/query-keys'
 import { useHubEvent } from '@/lib/realtime/realtime-provider'
+import { notificationText } from './notification-text'
 import { notificationsApi, type AppNotification } from './notifications-api'
 
 export function useNotifications() {
@@ -118,6 +119,6 @@ export function useNotificationStream() {
     void queryClient.invalidateQueries({ queryKey: queryKeys.notifications() })
     // Being added to a team or board changes what the sidebar lists.
     void queryClient.invalidateQueries({ queryKey: queryKeys.teams() })
-    toast(message.message, { icon: '🔔' })
+    toast(notificationText(message.message), { icon: '🔔' })
   })
 }

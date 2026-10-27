@@ -14,7 +14,7 @@ export function AppShell() {
 
   return (
     <div className="flex h-full">
-      <aside className="hidden w-64 shrink-0 border-r border-line bg-surface lg:block">
+      <aside className="hidden w-64 shrink-0 border-r border-line bg-sidebar lg:block">
         <Sidebar />
       </aside>
 
@@ -23,7 +23,7 @@ export function AppShell() {
           <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/40 data-[state=open]:animate-fade-in lg:hidden" />
           <RadixDialog.Content
             aria-describedby={undefined}
-            className="fixed inset-y-0 left-0 z-50 w-72 border-r border-line bg-surface shadow-overlay focus:outline-none lg:hidden"
+            className="fixed inset-y-0 left-0 z-50 w-72 border-r border-line bg-sidebar shadow-overlay focus:outline-none lg:hidden"
           >
             <RadixDialog.Title className="sr-only">Navegación</RadixDialog.Title>
             <Sidebar onNavigate={() => setDrawerOpen(false)} />

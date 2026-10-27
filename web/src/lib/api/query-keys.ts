@@ -13,4 +13,5 @@ export const queryKeys = {
   card: (cardId: string) => ['cards', cardId] as const,
   cardComments: (cardId: string) => ['cards', cardId, 'comments'] as const,
   notifications: () => ['notifications'] as const,
+  myCards: () => ['me', 'cards'] as const,
 }

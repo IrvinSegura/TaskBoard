@@ -15,6 +15,9 @@ import { BoardCard } from './board-card'
 import { useDeleteColumn, useRenameColumn } from './board-queries'
 import type { BoardColumn as Column, BoardMember, CardSummary } from './boards-api'
 
+// From "not started" grey to "done" green as columns go left to right, then around again.
+const columnAccents = ['bg-slate-400', 'bg-info', 'bg-warning', 'bg-primary', 'bg-success']
+
 interface BoardColumnProps {
   boardId: string
   column: Column
@@ -22,6 +25,8 @@ interface BoardColumnProps {
   cards: CardSummary[]
   members: BoardMember[]
   labels: BoardLabel[]
+  /** Position of the column on the board, which picks its accent color. */
+  index: number
   canEdit: boolean
   dragEnabled: boolean
   filtered: boolean
@@ -34,6 +39,7 @@ export function BoardColumn({
   cards,
   members,
   labels,
+  index,
   canEdit,
   dragEnabled,
   filtered,
@@ -68,6 +74,7 @@ export function BoardColumn({
             <GripVertical className="size-4" />
           </button>
         )}
+        <span className={cn('ml-1 size-2 shrink-0 rounded-full', columnAccents[index % columnAccents.length])} aria-hidden="true" />
         <ColumnTitle boardId={boardId} column={column} members={members} canEdit={canEdit} />
         <span className="ml-1 rounded-full bg-muted-surface px-1.5 text-xs font-medium text-muted tabular-nums">
           {filtered ? `${cards.length}/${column.cards.length}` : column.cards.length}

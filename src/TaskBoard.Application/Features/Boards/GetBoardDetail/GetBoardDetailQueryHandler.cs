@@ -39,12 +39,24 @@ internal sealed class GetBoardDetailQueryHandler(IReadDbContext db)
             .Select(c => new { c.Id, c.Name, c.Position })
             .ToListAsync(cancellationToken);
 
-        // One grouped query for the whole board instead of a count per card.
+        // Grouped queries for the whole board instead of counts per card.
         var checklists = await db.ChecklistItems
             .Where(i => i.BoardId == query.BoardId)
             .GroupBy(i => i.CardId)
             .Select(g => new { CardId = g.Key, Done = g.Count(i => i.IsDone), Total = g.Count() })
             .ToDictionaryAsync(x => x.CardId, x => new ChecklistProgressResponse(x.Done, x.Total), cancellationToken);
+
+        var commentCounts = await db.Comments
+            .Where(c => c.BoardId == query.BoardId)
+            .GroupBy(c => c.CardId)
+            .Select(g => new { CardId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.CardId, x => x.Count, cancellationToken);
+
+        var attachmentCounts = await db.Attachments
+            .Where(a => a.BoardId == query.BoardId)
+            .GroupBy(a => a.CardId)
+            .Select(g => new { CardId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.CardId, x => x.Count, cancellationToken);
 
         var cards = await db.Cards
             .Where(c => c.BoardId == query.BoardId && !c.IsArchived)
@@ -72,7 +84,9 @@ internal sealed class GetBoardDetailQueryHandler(IReadDbContext db)
                 x.Position,
                 x.AssigneeIds,
                 x.LabelIds,
-                checklists.GetValueOrDefault(x.Id)));
+                checklists.GetValueOrDefault(x.Id),
+                commentCounts.GetValueOrDefault(x.Id),
+                attachmentCounts.GetValueOrDefault(x.Id)));
 
         return new BoardDetailResponse(
             board.Id,

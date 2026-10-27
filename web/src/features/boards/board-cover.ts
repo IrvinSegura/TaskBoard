@@ -6,13 +6,15 @@ const covers = [
   'from-amber-500 via-orange-500 to-rose-500',
   'from-rose-500 via-pink-600 to-fuchsia-600',
   'from-violet-500 via-purple-600 to-indigo-700',
-  'from-slate-600 via-slate-700 to-slate-800',
+  'from-cyan-500 via-sky-600 to-blue-700',
 ]
 
+// FNV-1a: ids are UUID v7, whose shared time prefix made a plain multiply-and-add hash pick the same few covers.
 export function boardCover(id: string): string {
-  let hash = 0
+  let hash = 0x811c9dc5
   for (let i = 0; i < id.length; i++) {
-    hash = (hash * 37 + id.charCodeAt(i)) | 0
+    hash ^= id.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193)
   }
-  return covers[Math.abs(hash) % covers.length]!
+  return covers[(hash >>> 0) % covers.length]!
 }

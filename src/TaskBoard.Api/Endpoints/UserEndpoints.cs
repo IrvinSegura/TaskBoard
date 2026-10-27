@@ -2,6 +2,7 @@ using TaskBoard.Api.Authentication;
 using TaskBoard.Api.Extensions;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Features.Auth.ChangePassword;
+using TaskBoard.Application.Features.Cards.GetMyCards;
 using TaskBoard.Application.Features.Users.GetCurrentUser;
 using TaskBoard.Application.Features.Users.UpdateProfile;
 
@@ -18,6 +19,14 @@ internal sealed class UserEndpoints : IEndpoint
             CancellationToken cancellationToken) =>
         {
             var result = await handler.Handle(new GetCurrentUserQuery(), cancellationToken);
+            return result.ToHttpResult();
+        });
+
+        group.MapGet("/cards", async (
+            IQueryHandler<GetMyCardsQuery, IReadOnlyList<MyCardResponse>> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new GetMyCardsQuery(), cancellationToken);
             return result.ToHttpResult();
         });
 

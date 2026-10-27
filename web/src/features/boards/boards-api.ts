@@ -32,6 +32,8 @@ export interface CardSummary {
   labelIds: string[]
   /** Null when the card has no checklist. */
   checklist: { done: number; total: number } | null
+  commentCount: number
+  attachmentCount: number
 }
 
 export interface BoardColumn {

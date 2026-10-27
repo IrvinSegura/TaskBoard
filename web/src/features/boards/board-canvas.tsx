@@ -218,7 +218,7 @@ export function BoardCanvas({ board, canEdit, visibleCardIds, onOpenCard }: Boar
     >
       <div className="scrollbar-thin flex h-full items-start gap-3 overflow-x-auto px-4 pb-4 sm:px-6">
         <SortableContext items={columns.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
-          {columns.map((column) => (
+          {columns.map((column, index) => (
             <BoardColumn
               key={column.id}
               boardId={board.id}
@@ -226,6 +226,7 @@ export function BoardCanvas({ board, canEdit, visibleCardIds, onOpenCard }: Boar
               cards={visibleCardIds ? column.cards.filter((card) => visibleCardIds.has(card.id)) : column.cards}
               members={board.members}
               labels={board.labels}
+              index={index}
               canEdit={canEdit}
               dragEnabled={dragEnabled}
               filtered={visibleCardIds !== null}
