@@ -6,12 +6,12 @@ Tablero de tareas estilo Kanban: una API construida con ASP.NET Core y un fronte
 
 ## Funcionalidades
 
-- **Autenticación**: registro e inicio de sesión con tokens de acceso JWT de corta duración y refresh tokens rotativos; cierre de sesión, cambio de contraseña y `GET /me`. Límite de intentos en el login y el registro.
-- **Equipos**: crear equipos, agregar y quitar miembros, cambiar roles y salir de un equipo.
-- **Tableros**: tableros por equipo con miembros, roles y visibilidad; renombrarlos, archivarlos y restaurarlos. Los tableros archivados son de solo lectura.
-- **Columnas y tarjetas**: crear, renombrar y reordenar columnas; crear, editar, mover, archivar y restaurar tarjetas, asignar o desasignar miembros, y buscar o filtrar las tarjetas de un tablero.
+- **Autenticación**: registro e inicio de sesión con tokens de acceso JWT de corta duración y refresh tokens rotativos; cierre de sesión, cambio de contraseña, `GET /me` y cambio del nombre visible. Límite de intentos en el login y el registro.
+- **Equipos**: crear, renombrar y eliminar equipos (solo el dueño elimina), agregar y quitar miembros, cambiar roles y salir de un equipo.
+- **Tableros**: tableros por equipo con miembros, roles y visibilidad; renombrarlos, archivarlos, restaurarlos y eliminarlos (solo si están archivados). Los tableros archivados son de solo lectura.
+- **Columnas y tarjetas**: crear, renombrar, reordenar y eliminar columnas (con sus tarjetas); crear, editar, mover, archivar, restaurar y eliminar tarjetas archivadas, asignar o desasignar miembros, y buscar o filtrar las tarjetas de un tablero.
 - **Comentarios y adjuntos**: agregar, editar y borrar comentarios; subir, descargar y borrar archivos (disco local o Azure Blob Storage).
-- **Notificaciones**: notificaciones personales con marca de leído.
+- **Notificaciones**: notificaciones personales con marca de leído, marcar todas como leídas y eliminarlas.
 - **Tiempo real**: eventos de tablero y notificaciones enviados por SignalR.
 - **Frontend**: aplicación web en React con tableros arrastrables, detalle de tarjetas, comentarios, adjuntos, filtros, notificaciones en vivo y modo claro/oscuro.
 - **Operación**: health checks (`/health`), imagen Docker, migraciones como paso de despliegue y soporte para varias instancias con Redis.
@@ -160,9 +160,12 @@ El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-toke
 | `POST` | `/auth/refresh` | Cambiar el refresh token de la cookie por tokens nuevos. El anterior deja de servir; reutilizarlo cierra todas las sesiones del usuario. |
 | `POST` | `/auth/logout` | Revocar el refresh token de la cookie y borrarla. |
 | `GET` | `/me` | Datos del usuario actual. |
+| `PATCH` | `/me` | Cambiar el nombre visible (`displayName`). |
 | `POST` | `/me/password` | Cambiar la contraseña. Revoca todos los refresh tokens del usuario y borra la cookie, así que hay que volver a iniciar sesión. |
 | `GET` | `/teams` | Listar mis equipos. |
 | `POST` | `/teams` | Crear un equipo. |
+| `PATCH` | `/teams/{teamId}` | Renombrar un equipo. Solo dueños y admins. |
+| `DELETE` | `/teams/{teamId}` | Eliminar un equipo con todos sus tableros. Solo el dueño. |
 | `GET` | `/teams/{teamId}/members` | Listar los miembros del equipo con su nombre, email y rol. El dueño aparece primero. |
 | `POST` | `/teams/{teamId}/members` | Agregar un miembro al equipo por su email (`email`, `role`). Solo dueños y admins. |
 | `PATCH` | `/teams/{teamId}/members/{userId}` | Cambiar el rol de un miembro del equipo. |
@@ -173,11 +176,13 @@ El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-toke
 | `PATCH` | `/boards/{boardId}` | Renombrar un tablero. |
 | `POST` | `/boards/{boardId}/archive` | Archivar un tablero. Queda de solo lectura. |
 | `POST` | `/boards/{boardId}/restore` | Restaurar un tablero archivado. |
+| `DELETE` | `/boards/{boardId}` | Eliminar un tablero archivado con todo su contenido. Solo admins del tablero. |
 | `POST` | `/boards/{boardId}/members` | Agregar un miembro al tablero. |
 | `DELETE` | `/boards/{boardId}/members/{userId}` | Quitar a un miembro del tablero. |
 | `POST` | `/boards/{boardId}/columns` | Crear una columna. |
 | `PATCH` | `/columns/{columnId}` | Renombrar una columna. |
 | `PATCH` | `/columns/{columnId}/move` | Mover una columna entre dos columnas vecinas. |
+| `DELETE` | `/columns/{columnId}` | Eliminar una columna y sus tarjetas, también las archivadas. Solo admins del tablero. |
 | `POST` | `/columns/{columnId}/cards` | Crear una tarjeta. |
 | `GET` | `/boards/{boardId}/cards` | Buscar y filtrar tarjetas: `text`, `columnId`, `assigneeId`, `priority`, `dueBefore`, `archived`. Paginado. |
 | `GET` | `/cards/{cardId}` | Obtener una tarjeta con sus miembros asignados, adjuntos y número de comentarios. |
@@ -185,6 +190,7 @@ El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-toke
 | `PATCH` | `/cards/{cardId}/move` | Mover una tarjeta a una columna y posición. |
 | `POST` | `/cards/{cardId}/archive` | Archivar una tarjeta. |
 | `POST` | `/cards/{cardId}/restore` | Restaurar una tarjeta archivada en su columna. |
+| `DELETE` | `/cards/{cardId}` | Eliminar una tarjeta archivada con sus comentarios y adjuntos. Solo admins del tablero. |
 | `POST` | `/cards/{cardId}/assignees` | Asignar un miembro a una tarjeta. |
 | `DELETE` | `/cards/{cardId}/assignees/{userId}` | Desasignar a un miembro de una tarjeta. |
 | `GET` | `/cards/{cardId}/comments` | Listar los comentarios de una tarjeta, del más antiguo al más reciente. Paginado. |
@@ -196,6 +202,8 @@ El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-toke
 | `DELETE` | `/attachments/{attachmentId}` | Borrar un adjunto y su archivo (quien lo subió o admin del tablero). |
 | `GET` | `/notifications` | Listar mis notificaciones. |
 | `PATCH` | `/notifications/{notificationId}/read` | Marcar una notificación como leída. |
+| `POST` | `/notifications/read-all` | Marcar todas mis notificaciones como leídas. |
+| `DELETE` | `/notifications/{notificationId}` | Eliminar una notificación. |
 | `GET` | `/health` | Estado de PostgreSQL, el almacenamiento de archivos y Redis (503 si alguno falla). |
 | `GET` | `/health/live` | Responde mientras el proceso está vivo, sin revisar dependencias. |
 
@@ -204,9 +212,9 @@ El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-toke
 Conéctate al hub de SignalR en `/hubs/board`. Los navegadores envían el token en el parámetro `access_token` de la query string.
 
 - Llama a `JoinBoard(boardId)` al abrir un tablero y a `LeaveBoard(boardId)` al salir. Solo los miembros del tablero pueden unirse.
-- Eventos de tablero: `BoardRenamed`, `BoardArchived`, `BoardRestored`, `BoardMemberRemoved`, `ColumnCreated`, `ColumnRenamed`, `ColumnMoved`, `CardCreated`, `CardUpdated`, `CardMoved`, `CardArchived`, `CardRestored`, `CardAssigned`, `CardUnassigned`, `CommentAdded`, `CommentEdited`, `CommentDeleted`, `AttachmentAdded`, `AttachmentDeleted`.
+- Eventos de tablero: `BoardRenamed`, `BoardArchived`, `BoardRestored`, `BoardDeleted`, `BoardMemberRemoved`, `ColumnCreated`, `ColumnRenamed`, `ColumnMoved`, `ColumnDeleted`, `CardCreated`, `CardUpdated`, `CardMoved`, `CardArchived`, `CardRestored`, `CardDeleted`, `CardAssigned`, `CardUnassigned`, `CommentAdded`, `CommentEdited`, `CommentDeleted`, `AttachmentAdded`, `AttachmentDeleted`.
 - Cuando un usuario pierde acceso a un tablero, el servidor envía `BoardMemberRemoved` con su propio id a cada una de sus conexiones y luego las saca del grupo, para que el cliente pueda cerrar el tablero. Ese mensaje puede llegarle dos veces (el aviso directo y el del grupo), así que el cliente debe tratarlo de forma idempotente.
-- Eventos personales: `NotificationReceived`, que llega a todas las conexiones del usuario sin unirse a ningún tablero.
+- Eventos personales: `NotificationReceived` y `TeamDeleted` (a cada miembro de un equipo eliminado), que llegan a todas las conexiones del usuario sin unirse a ningún tablero.
 - Con `ConnectionStrings:Redis` configurado, los mensajes llegan a los clientes conectados a cualquier instancia, y cada instancia saca del grupo a sus propias conexiones cuando un usuario pierde acceso.
 
 ## Despliegue

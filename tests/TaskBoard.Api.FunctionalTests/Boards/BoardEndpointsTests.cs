@@ -88,4 +88,40 @@ public class BoardEndpointsTests(TaskBoardApiFactory factory) : IClassFixture<Ta
 
         (await editor.Client.GetAsync($"/boards/{boardId}")).StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async Task DeleteBoard_OnlyOnceArchived_RemovesItForGood()
+    {
+        var owner = await _api.CreateUserAsync();
+        var teamId = await _api.CreateTeamAsync(owner);
+        var boardId = await _api.CreateBoardAsync(owner, teamId);
+        var columnId = await _api.CreateColumnAsync(owner, boardId);
+        await _api.CreateCardAsync(owner, columnId);
+
+        var active = await owner.Client.DeleteAsync($"/boards/{boardId}");
+        active.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        (await ApiDriver.ReadErrorCodeAsync(active)).ShouldBe("Boards.NotArchived");
+
+        (await owner.Client.PostAsync($"/boards/{boardId}/archive", null)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        (await owner.Client.DeleteAsync($"/boards/{boardId}")).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        (await owner.Client.GetAsync($"/boards/{boardId}")).StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        var archivedBoards = await owner.Client.GetFromJsonAsync<JsonElement>($"/teams/{teamId}/boards?archived=true");
+        archivedBoards.EnumerateArray().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteBoard_ByEditor_IsForbidden()
+    {
+        var owner = await _api.CreateUserAsync();
+        var editor = await _api.CreateUserAsync();
+        var teamId = await _api.CreateTeamAsync(owner, editor);
+        var boardId = await _api.CreateBoardAsync(owner, teamId);
+        await _api.AddBoardMemberAsync(owner, boardId, editor, "Editor");
+        (await owner.Client.PostAsync($"/boards/{boardId}/archive", null)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        var response = await editor.Client.DeleteAsync($"/boards/{boardId}");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
 }

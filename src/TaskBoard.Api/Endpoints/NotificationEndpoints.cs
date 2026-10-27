@@ -1,6 +1,8 @@
 using TaskBoard.Api.Extensions;
 using TaskBoard.Application.Abstractions.Messaging;
+using TaskBoard.Application.Features.Notifications.DeleteNotification;
 using TaskBoard.Application.Features.Notifications.GetMyNotifications;
+using TaskBoard.Application.Features.Notifications.MarkAllNotificationsAsRead;
 using TaskBoard.Application.Features.Notifications.MarkNotificationAsRead;
 
 namespace TaskBoard.Api.Endpoints;
@@ -26,6 +28,23 @@ internal sealed class NotificationEndpoints : IEndpoint
             CancellationToken cancellationToken) =>
         {
             var result = await handler.Handle(new MarkNotificationAsReadCommand(notificationId), cancellationToken);
+            return result.ToHttpResult();
+        });
+
+        group.MapPost("/read-all", async (
+            ICommandHandler<MarkAllNotificationsAsReadCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new MarkAllNotificationsAsReadCommand(), cancellationToken);
+            return result.ToHttpResult();
+        });
+
+        group.MapDelete("/{notificationId:guid}", async (
+            Guid notificationId,
+            ICommandHandler<DeleteNotificationCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new DeleteNotificationCommand(notificationId), cancellationToken);
             return result.ToHttpResult();
         });
     }
