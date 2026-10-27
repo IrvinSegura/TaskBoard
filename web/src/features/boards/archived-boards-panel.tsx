@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Archive, ArchiveRestore } from 'lucide-react'
+import { Archive, ArchiveRestore, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback'
 import { useTeamOutlet } from '@/features/teams/team-layout'
 import { errorMessage } from '@/lib/api/api-error'
@@ -27,6 +29,18 @@ export function ArchivedBoardsPanel() {
     },
     onError: (error) => toast.error(errorMessage(error)),
   })
+  // Same as restoring: only board admins can delete, and only archived boards.
+  const [deleting, setDeleting] = useState<BoardSummary | null>(null)
+  const remove = useMutation({
+    mutationFn: (board: BoardSummary) => boardsApi.delete(board.id),
+    onSuccess: (_result, board) => {
+      setDeleting(null)
+      toast.success(`«${board.name}» se eliminó`)
+      queryClient.removeQueries({ queryKey: queryKeys.board(board.id) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.allTeamBoards(team.id) })
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
 
   if (boards.isPending) {
     return <Skeleton className="h-40 rounded-xl" />
@@ -45,27 +59,48 @@ export function ArchivedBoardsPanel() {
   }
 
   return (
-    <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface shadow-card">
-      {boards.data.map((board) => (
-        <li key={board.id} className="flex items-center gap-4 px-4 py-3 sm:px-5">
-          <span className={cn('size-9 shrink-0 rounded-lg bg-linear-to-br opacity-60', boardCover(board.id))} />
-          <div className="min-w-0 flex-1">
-            <Link to={`/boards/${board.id}`} className="truncate text-sm font-medium hover:text-primary">
-              {board.name}
-            </Link>
-            <VisibilityLabel visibility={board.visibility} className="mt-0.5 flex text-xs text-muted" />
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            loading={restore.isPending && restore.variables?.id === board.id}
-            onClick={() => restore.mutate(board)}
-          >
-            <ArchiveRestore />
-            Restaurar
-          </Button>
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+        {boards.data.map((board) => (
+          <li key={board.id} className="flex items-center gap-4 px-4 py-3 sm:px-5">
+            <span className={cn('size-9 shrink-0 rounded-lg bg-linear-to-br opacity-60', boardCover(board.id))} />
+            <div className="min-w-0 flex-1">
+              <Link to={`/boards/${board.id}`} className="truncate text-sm font-medium hover:text-primary">
+                {board.name}
+              </Link>
+              <VisibilityLabel visibility={board.visibility} className="mt-0.5 flex text-xs text-muted" />
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={restore.isPending && restore.variables?.id === board.id}
+              onClick={() => restore.mutate(board)}
+            >
+              <ArchiveRestore />
+              Restaurar
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-faint hover:text-danger"
+              aria-label={`Eliminar ${board.name}`}
+              title="Eliminar definitivamente"
+              onClick={() => setDeleting(board)}
+            >
+              <Trash2 />
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title={`¿Eliminar «${deleting?.name ?? ''}» definitivamente?`}
+        description="Se borrarán sus columnas, tarjetas, comentarios y adjuntos. No se puede deshacer."
+        confirmLabel="Eliminar tablero"
+        loading={remove.isPending}
+        onConfirm={() => deleting && remove.mutate(deleting)}
+      />
+    </>
   )
 }

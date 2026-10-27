@@ -2,6 +2,7 @@ import * as RadixDialog from '@radix-ui/react-dialog'
 import { useState } from 'react'
 import { Outlet } from 'react-router'
 import { useNotificationStream } from '@/features/notifications/notification-queries'
+import { useTeamDeletedStream } from '@/features/teams/team-queries'
 import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
 
@@ -9,6 +10,7 @@ import { Topbar } from './topbar'
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   useNotificationStream()
+  useTeamDeletedStream()
 
   return (
     <div className="flex h-full">

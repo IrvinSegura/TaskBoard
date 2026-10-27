@@ -15,11 +15,13 @@ const boardEvents = [
   'ColumnCreated',
   'ColumnRenamed',
   'ColumnMoved',
+  'ColumnDeleted',
   'CardCreated',
   'CardUpdated',
   'CardMoved',
   'CardArchived',
   'CardRestored',
+  'CardDeleted',
   'CardAssigned',
   'CardUnassigned',
 ] as const
@@ -94,4 +96,17 @@ export function useBoardRealtime(boardId: string, teamId: string | undefined, en
   })
 
   useHubEvents<BoardEventMessage>(cardEvents, (message) => schedule({ cardId: message.cardId }))
+
+  useHubEvents<BoardEventMessage>(['BoardDeleted'], (message) => {
+    if (message.boardId !== boardId || removed.current) {
+      return
+    }
+    removed.current = true
+    toast.warning('Este tablero se eliminó')
+    queryClient.removeQueries({ queryKey: queryKeys.board(boardId) })
+    if (teamId) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.allTeamBoards(teamId) })
+    }
+    navigate(teamId ? `/teams/${teamId}` : '/', { replace: true })
+  })
 }

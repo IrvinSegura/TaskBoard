@@ -1,9 +1,11 @@
 import * as RadixDialog from '@radix-ui/react-dialog'
-import { Archive, ArchiveRestore, X } from 'lucide-react'
+import { Archive, ArchiveRestore, Trash2, X } from 'lucide-react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import { useBoardOutlet } from '@/features/boards/board-page'
 import { errorMessage } from '@/lib/api/api-error'
@@ -12,7 +14,7 @@ import { CardAttachments } from './card-attachments'
 import { CardComments } from './card-comments'
 import { CardDescriptionEditor } from './card-description-editor'
 import { CardFields } from './card-fields'
-import { useArchiveCard, useCard, useRestoreCard } from './card-queries'
+import { useArchiveCard, useCard, useDeleteCard, useRestoreCard } from './card-queries'
 import { CardTitleEditor } from './card-title-editor'
 
 /** The card detail, rendered over the board as /boards/:boardId/cards/:cardId so it can be linked. */
@@ -23,6 +25,8 @@ export function CardDetailRoute() {
   const card = useCard(cardId)
   const archive = useArchiveCard(cardId, board.id)
   const restore = useRestoreCard(cardId, board.id)
+  const remove = useDeleteCard(board.id)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const close = () => navigate(`/boards/${board.id}`)
   const canEdit = permissions.canEdit && !card.data?.isArchived
@@ -88,20 +92,33 @@ export function CardDetailRoute() {
                   {permissions.canEdit && (
                     <div className="border-t border-line pt-5">
                       {card.data.isArchived ? (
-                        <Button
-                          variant="secondary"
-                          className="w-full"
-                          loading={restore.isPending}
-                          onClick={() =>
-                            restore.mutate(undefined, {
-                              onSuccess: () => toast.success('Tarjeta restaurada'),
-                              onError: (error) => toast.error(errorMessage(error)),
-                            })
-                          }
-                        >
-                          <ArchiveRestore />
-                          Restaurar tarjeta
-                        </Button>
+                        <>
+                          <Button
+                            variant="secondary"
+                            className="w-full"
+                            loading={restore.isPending}
+                            onClick={() =>
+                              restore.mutate(undefined, {
+                                onSuccess: () => toast.success('Tarjeta restaurada'),
+                                onError: (error) => toast.error(errorMessage(error)),
+                              })
+                            }
+                          >
+                            <ArchiveRestore />
+                            Restaurar tarjeta
+                          </Button>
+                          {/* Only archived cards can be deleted, and only by board admins. */}
+                          {permissions.canAdmin && (
+                            <Button
+                              variant="ghost"
+                              className="mt-2 w-full text-danger hover:bg-danger-soft"
+                              onClick={() => setConfirmDelete(true)}
+                            >
+                              <Trash2 />
+                              Eliminar definitivamente
+                            </Button>
+                          )}
+                        </>
                       ) : (
                         <Button
                           variant="secondary"
@@ -132,6 +149,23 @@ export function CardDetailRoute() {
                   </p>
                 </aside>
               </div>
+              <ConfirmDialog
+                open={confirmDelete}
+                onOpenChange={setConfirmDelete}
+                title="¿Eliminar esta tarjeta definitivamente?"
+                description="Se borrarán también sus comentarios y adjuntos. No se puede deshacer."
+                confirmLabel="Eliminar tarjeta"
+                loading={remove.isPending}
+                onConfirm={() =>
+                  remove.mutate(card.data.id, {
+                    onSuccess: () => {
+                      toast.success('Tarjeta eliminada')
+                      close()
+                    },
+                    onError: (error) => toast.error(errorMessage(error)),
+                  })
+                }
+              />
             </>
           )}
         </RadixDialog.Content>
