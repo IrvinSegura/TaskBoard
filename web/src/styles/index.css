@@ -1,0 +1,125 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Semantic colors: components use these names, and dark mode only swaps the variables below. */
+:root {
+  --canvas: oklch(0.985 0.002 264);
+  --surface: oklch(1 0 0);
+  --subtle: oklch(0.967 0.003 264);
+  --muted-surface: oklch(0.94 0.004 264);
+  --line: oklch(0.91 0.005 264);
+  --line-strong: oklch(0.84 0.008 264);
+  --fg: oklch(0.21 0.02 264);
+  --muted: oklch(0.47 0.02 264);
+  --faint: oklch(0.6 0.015 264);
+  --primary: oklch(0.51 0.23 277);
+  --primary-hover: oklch(0.46 0.22 277);
+  --primary-soft: oklch(0.96 0.03 277);
+  --primary-fg: oklch(1 0 0);
+  --danger: oklch(0.58 0.22 27);
+  --danger-soft: oklch(0.97 0.02 27);
+  --ring: oklch(0.51 0.23 277 / 0.35);
+  --shadow-color: 220 40% 2%;
+  color-scheme: light;
+}
+
+.dark {
+  --canvas: oklch(0.16 0.012 264);
+  --surface: oklch(0.2 0.013 264);
+  --subtle: oklch(0.235 0.014 264);
+  --muted-surface: oklch(0.27 0.015 264);
+  --line: oklch(0.29 0.015 264);
+  --line-strong: oklch(0.37 0.018 264);
+  --fg: oklch(0.96 0.005 264);
+  --muted: oklch(0.72 0.015 264);
+  --faint: oklch(0.58 0.015 264);
+  --primary: oklch(0.62 0.2 277);
+  --primary-hover: oklch(0.68 0.19 277);
+  --primary-soft: oklch(0.3 0.07 277);
+  --primary-fg: oklch(1 0 0);
+  --danger: oklch(0.66 0.2 25);
+  --danger-soft: oklch(0.3 0.08 25);
+  --ring: oklch(0.62 0.2 277 / 0.45);
+  --shadow-color: 220 40% 1%;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-subtle: var(--subtle);
+  --color-muted-surface: var(--muted-surface);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-fg: var(--primary-fg);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-ring: var(--ring);
+
+  --shadow-card: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 1px 3px hsl(var(--shadow-color) / 0.08);
+  --shadow-raised: 0 4px 8px -2px hsl(var(--shadow-color) / 0.1), 0 2px 4px -2px hsl(var(--shadow-color) / 0.06);
+  --shadow-overlay: 0 20px 40px -12px hsl(var(--shadow-color) / 0.3), 0 8px 16px -8px hsl(var(--shadow-color) / 0.15);
+
+  --animate-fade-in: fade-in 150ms ease-out;
+  --animate-scale-in: scale-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-slide-in-right: slide-in-right 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Animates `scale`, not `transform`: Tailwind's translate-* utilities center dialogs with the `translate` property. */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    scale: 0.97;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-fg font-sans antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring;
+  }
+
+  ::selection {
+    @apply bg-primary/20;
+  }
+}
+
+@layer utilities {
+  /* Thin scrollbars for the horizontal board and the side panels. */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
