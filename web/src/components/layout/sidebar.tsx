@@ -8,13 +8,16 @@ import {
   Home,
   ListChecks,
   Plus,
+  Settings,
   Star,
   Users,
 } from 'lucide-react'
 import { useState } from 'react'
-import { NavLink, useLocation } from 'react-router'
+import { Link, NavLink, useLocation } from 'react-router'
 import { Logo } from '@/components/brand/logo'
+import { Avatar } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/feedback'
+import { useCurrentUser } from '@/features/auth/auth-provider'
 import { useTeamBoards } from '@/features/boards/board-queries'
 import { boardCover } from '@/features/boards/board-cover'
 import { useUnreadCount } from '@/features/notifications/notification-queries'
@@ -24,11 +27,19 @@ import { useTeams } from '@/features/teams/team-queries'
 import type { TeamSummary } from '@/features/teams/teams-api'
 import { cn } from '@/lib/utils/cn'
 
+// The active link gets a soft fill and a short accent bar on its left edge.
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors [&_svg]:size-4',
-    isActive ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-muted-surface hover:text-fg',
+    'relative flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors [&_svg]:size-4',
+    'before:absolute before:top-1.5 before:bottom-1.5 before:-left-3 before:w-0.5 before:rounded-r-full before:bg-primary before:transition-opacity',
+    isActive
+      ? 'bg-primary-soft text-primary before:opacity-100'
+      : 'text-muted before:opacity-0 hover:bg-muted-surface hover:text-fg',
   )
+
+function SectionLabel({ children }: { children: string }) {
+  return <p className="px-5 pb-1.5 text-[11px] font-semibold tracking-wider text-faint uppercase">{children}</p>
+}
 
 const workspaceLinks = [
   { to: '/teams', label: 'Equipos', icon: Users, end: true },
@@ -48,7 +59,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <Logo />
       </div>
 
-      <nav className="space-y-0.5 px-3 pt-2" aria-label="Principal">
+      <SectionLabel>General</SectionLabel>
+      <nav className="space-y-0.5 px-3" aria-label="Principal">
         <NavLink to="/" end className={navLinkClass} onClick={onNavigate}>
           <Home />
           Inicio
@@ -76,7 +88,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </NavLink>
       </nav>
 
-      <nav className="mt-3 space-y-0.5 border-t border-line px-3 pt-3" aria-label="Espacio de trabajo">
+      <div className="mt-5">
+        <SectionLabel>Espacio de trabajo</SectionLabel>
+      </div>
+      <nav className="space-y-0.5 px-3" aria-label="Espacio de trabajo">
         {workspaceLinks.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className={navLinkClass} onClick={onNavigate}>
             <Icon />
@@ -85,8 +100,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
 
-      <div className="mt-6 flex items-center justify-between px-5">
-        <p className="text-xs font-semibold tracking-wide text-faint uppercase">Tus equipos</p>
+      <div className="mt-5 flex items-center justify-between pr-4 pl-5">
+        <p className="text-[11px] font-semibold tracking-wider text-faint uppercase">Tus equipos</p>
         <button
           type="button"
           onClick={() => setCreating(true)}
@@ -114,8 +129,27 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </div>
 
+      <UserCard onNavigate={onNavigate} />
       <CreateTeamDialog open={creating} onOpenChange={setCreating} />
     </div>
+  )
+}
+
+function UserCard({ onNavigate }: { onNavigate?: () => void }) {
+  const user = useCurrentUser()
+  return (
+    <Link
+      to="/account"
+      onClick={onNavigate}
+      className="group m-3 flex shrink-0 items-center gap-3 rounded-xl border border-line bg-surface px-3 py-2.5 shadow-card transition-colors hover:border-line-strong"
+    >
+      <Avatar id={user.id} name={user.displayName} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium">{user.displayName}</span>
+        <span className="block truncate text-xs text-muted">{user.email}</span>
+      </span>
+      <Settings className="size-4 shrink-0 text-faint transition-transform group-hover:rotate-45 group-hover:text-fg" />
+    </Link>
   )
 }
 

@@ -1,7 +1,8 @@
 import { Activity, Archive, ChevronRight, LayoutGrid, Settings, Users } from 'lucide-react'
 import { Link, NavLink, Outlet, useOutletContext, useParams } from 'react-router'
-import { PageContainer, PageHeader } from '@/components/layout/page-header'
+import { PageContainer } from '@/components/layout/page-header'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback'
+import { boardCover } from '@/features/boards/board-cover'
 import { cn } from '@/lib/utils/cn'
 import { TeamAvatar } from './team-avatar'
 import { TeamRoleBadge } from './team-role-badge'
@@ -56,24 +57,29 @@ export function TeamLayout() {
 
   return (
     <PageContainer>
-      <PageHeader
-        eyebrow={
-          <nav className="flex items-center gap-1" aria-label="Ruta">
-            <Link to="/teams" className="hover:text-fg">
-              Equipos
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <span className="truncate text-fg">{team.name}</span>
-          </nav>
-        }
-        title={
-          <span className="flex items-center gap-3">
-            <TeamAvatar id={team.id} name={team.name} size="lg" />
-            <span className="truncate">{team.name}</span>
-          </span>
-        }
-        actions={<TeamRoleBadge role={team.myRole} />}
-      />
+      <nav className="mb-4 flex items-center gap-1 text-sm text-muted" aria-label="Ruta">
+        <Link to="/teams" className="hover:text-fg">
+          Equipos
+        </Link>
+        <ChevronRight className="size-3.5" />
+        <span className="truncate text-fg">{team.name}</span>
+      </nav>
+
+      <header className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+        <div className={cn('relative h-24 bg-linear-to-br sm:h-28', boardCover(team.id))}>
+          <div className="bg-dots absolute inset-0 opacity-60" aria-hidden="true" />
+        </div>
+        <div className="flex flex-wrap items-end gap-x-4 gap-y-2 px-5 pb-5 sm:px-6">
+          <TeamAvatar id={team.id} name={team.name} size="xl" className="-mt-8 ring-4 ring-surface" />
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-2xl font-semibold tracking-tight">{team.name}</h1>
+            <p className="mt-0.5 text-sm text-muted">
+              {team.memberCount} {team.memberCount === 1 ? 'miembro' : 'miembros'}
+            </p>
+          </div>
+          <TeamRoleBadge role={team.myRole} />
+        </div>
+      </header>
 
       {/* The nav overlaps the border by 1px so the active tab's underline sits on it while the tabs scroll. */}
       <div className="mt-8 border-b border-line">

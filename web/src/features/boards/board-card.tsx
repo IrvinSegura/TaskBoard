@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ListChecks } from 'lucide-react'
+import { ListChecks, MessageSquare, Paperclip } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 import { AvatarStack } from '@/components/ui/avatar'
 import { LabelChip } from '@/features/labels/label-chip'
@@ -25,7 +25,13 @@ export function BoardCardView({ card, members, labels, dragging, overlay }: Boar
     .map((member) => ({ id: member.userId, name: member.displayName }))
   const cardLabels = labelsByIds(labels, card.labelIds)
   const checklist = card.checklist
-  const hasMeta = card.priority !== 'None' || card.dueDate || checklist || assignees.length > 0
+  const hasMeta =
+    card.priority !== 'None' ||
+    card.dueDate ||
+    checklist ||
+    card.commentCount > 0 ||
+    card.attachmentCount > 0 ||
+    assignees.length > 0
 
   return (
     <div
@@ -60,6 +66,18 @@ export function BoardCardView({ card, members, labels, dragging, overlay }: Boar
             >
               <ListChecks className="size-3" />
               {checklist.done}/{checklist.total}
+            </span>
+          )}
+          {card.commentCount > 0 && (
+            <span className="inline-flex items-center gap-1 text-xs text-muted tabular-nums" title="Comentarios">
+              <MessageSquare className="size-3" />
+              {card.commentCount}
+            </span>
+          )}
+          {card.attachmentCount > 0 && (
+            <span className="inline-flex items-center gap-1 text-xs text-muted tabular-nums" title="Adjuntos">
+              <Paperclip className="size-3" />
+              {card.attachmentCount}
             </span>
           )}
           {assignees.length > 0 && (

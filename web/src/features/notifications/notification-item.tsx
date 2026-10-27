@@ -1,6 +1,7 @@
 import { LayoutGrid, MessageSquare, UserCheck, Users } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { formatRelative } from '@/lib/utils/format'
+import { notificationText } from './notification-text'
 import type { AppNotification, NotificationType } from './notifications-api'
 
 const typeMeta: Record<NotificationType, { icon: typeof Users; className: string; label: string }> = {
@@ -20,7 +21,7 @@ export function NotificationContent({ notification }: { notification: AppNotific
       </span>
       <span className="min-w-0 flex-1">
         <span className={cn('block text-sm leading-snug', notification.isRead ? 'text-muted' : 'font-medium text-fg')}>
-          {notification.message}
+          {notificationText(notification.message)}
         </span>
         <span className="mt-1 block text-xs text-faint">
           {label} · {formatRelative(notification.createdAt)}

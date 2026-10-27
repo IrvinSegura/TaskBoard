@@ -4,6 +4,8 @@ import { Link } from 'react-router'
 import { PageContainer, PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback'
+import { boardCover } from '@/features/boards/board-cover'
+import { cn } from '@/lib/utils/cn'
 import { CreateTeamDialog } from './create-team-dialog'
 import { TeamAvatar } from './team-avatar'
 import { TeamRoleBadge } from './team-role-badge'
@@ -53,14 +55,17 @@ export function TeamsPage() {
               <Link
                 key={team.id}
                 to={`/teams/${team.id}`}
-                className="group flex flex-col rounded-xl border border-line bg-surface p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-line-strong hover:shadow-raised"
+                className="group flex flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-card transition-all hover:-translate-y-0.5 hover:border-line-strong hover:shadow-raised"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <TeamAvatar name={team.name} id={team.id} />
+                <div className={cn('relative h-16 bg-linear-to-br', boardCover(team.id))}>
+                  <div className="bg-dots absolute inset-0 opacity-60" aria-hidden="true" />
+                </div>
+                <div className="flex items-end justify-between gap-3 px-5">
+                  <TeamAvatar name={team.name} id={team.id} size="lg" className="-mt-6 ring-4 ring-surface" />
                   <TeamRoleBadge role={team.myRole} />
                 </div>
-                <h2 className="mt-4 truncate text-[15px] font-semibold">{team.name}</h2>
-                <div className="mt-auto flex items-center justify-between pt-3 text-sm text-muted">
+                <h2 className="mt-3 truncate px-5 text-[15px] font-semibold group-hover:text-primary">{team.name}</h2>
+                <div className="mt-auto flex items-center justify-between px-5 pt-3 pb-5 text-sm text-muted">
                   <span className="inline-flex items-center gap-1.5">
                     <Users className="size-4" />
                     {team.memberCount} {team.memberCount === 1 ? 'miembro' : 'miembros'}

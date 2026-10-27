@@ -15,7 +15,7 @@ import { BoardMembersDialog } from './board-members-dialog'
 import { BoardTabs } from './board-tabs'
 import { boardRoleLabels, type BoardPermissions } from './board-permissions'
 import { useArchiveBoard, useRenameBoard, useRestoreBoard, type BoardLocation } from './board-queries'
-import { VisibilityLabel } from './board-tile'
+import { BoardMark, VisibilityLabel } from './board-tile'
 import type { BoardDetail } from './boards-api'
 
 interface BoardHeaderProps {
@@ -91,6 +91,7 @@ export function BoardHeader({ board, location, permissions }: BoardHeaderProps) 
       </nav>
 
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <BoardMark board={board} className="size-8 text-sm" />
         {editing ? (
           <input
             autoFocus

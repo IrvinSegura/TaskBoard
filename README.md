@@ -179,6 +179,7 @@ El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-toke
 | `POST` | `/auth/logout` | Revocar el refresh token de la cookie y borrarla. |
 | `GET` | `/me` | Datos del usuario actual. |
 | `PATCH` | `/me` | Cambiar el nombre visible (`displayName`). |
+| `GET` | `/me/cards` | Mis tarjetas asignadas, activas y de tableros no archivados, por fecha límite. |
 | `POST` | `/me/password` | Cambiar la contraseña. Revoca todos los refresh tokens del usuario y borra la cookie, así que hay que volver a iniciar sesión. |
 | `GET` | `/teams` | Listar mis equipos. |
 | `POST` | `/teams` | Crear un equipo. |

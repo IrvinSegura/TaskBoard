@@ -1,3 +1,4 @@
+using TaskBoard.Domain.Activities;
 using TaskBoard.Domain.Attachments;
 using TaskBoard.Domain.Boards;
 using TaskBoard.Domain.Cards;
@@ -39,4 +40,6 @@ public interface IReadDbContext
     IQueryable<Label> Labels { get; }
 
     IQueryable<ChecklistItem> ChecklistItems { get; }
+
+    IQueryable<ActivityEntry> Activities { get; }
 }

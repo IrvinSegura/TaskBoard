@@ -26,7 +26,9 @@ public sealed record CardSummaryResponse(
     double Position,
     IReadOnlyList<Guid> AssigneeIds,
     IReadOnlyList<Guid> LabelIds,
-    ChecklistProgressResponse? Checklist);
+    ChecklistProgressResponse? Checklist,
+    int CommentCount,
+    int AttachmentCount);
 
 // Null when the card has no checklist.
 public sealed record ChecklistProgressResponse(int Done, int Total);
