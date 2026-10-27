@@ -1,7 +1,9 @@
 using TaskBoard.Domain.Attachments;
 using TaskBoard.Domain.Boards;
 using TaskBoard.Domain.Cards;
+using TaskBoard.Domain.Checklists;
 using TaskBoard.Domain.Comments;
+using TaskBoard.Domain.Labels;
 using TaskBoard.Domain.Notifications;
 using TaskBoard.Domain.Teams;
 using TaskBoard.Domain.Users;
@@ -33,4 +35,8 @@ public interface IReadDbContext
     IQueryable<Attachment> Attachments { get; }
 
     IQueryable<Notification> Notifications { get; }
+
+    IQueryable<Label> Labels { get; }
+
+    IQueryable<ChecklistItem> ChecklistItems { get; }
 }

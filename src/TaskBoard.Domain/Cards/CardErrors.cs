@@ -16,6 +16,15 @@ public static class CardErrors
     public static readonly Error NotAssigned =
         Error.NotFound("Cards.NotAssigned", "The user is not assigned to the card.");
 
+    public static readonly Error LabelAlreadyAdded =
+        Error.Conflict("Cards.LabelAlreadyAdded", "The card already has that label.");
+
+    public static readonly Error LabelNotAdded =
+        Error.NotFound("Cards.LabelNotAdded", "The card does not have that label.");
+
+    public static readonly Error LabelNotOnBoard =
+        Error.Validation("Cards.LabelNotOnBoard", "Only labels of the card's board can be added.");
+
     public static readonly Error InvalidTargetColumn =
         Error.Validation("Cards.InvalidTargetColumn", "The target column does not belong to the card board.");
 
