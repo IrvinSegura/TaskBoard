@@ -1,17 +1,25 @@
-import { BellOff, CheckCheck } from 'lucide-react'
+import { BellOff, CheckCheck, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { PageContainer, PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback'
 import { Tabs } from '@/components/ui/tabs'
 import { NotificationItem } from './notification-item'
-import { useMarkAllAsRead, useNotifications, useOpenNotification } from './notification-queries'
+import { errorMessage } from '@/lib/api/api-error'
+import {
+  useDeleteNotification,
+  useMarkAllAsRead,
+  useNotifications,
+  useOpenNotification,
+} from './notification-queries'
 
 type Filter = 'all' | 'unread'
 
 export function NotificationsPage() {
   const notifications = useNotifications()
   const markAll = useMarkAllAsRead()
+  const remove = useDeleteNotification()
   const openNotification = useOpenNotification()
   const [filter, setFilter] = useState<Filter>('all')
 
@@ -26,7 +34,7 @@ export function NotificationsPage() {
         description="Asignaciones, invitaciones a equipos y tableros."
         actions={
           unread.length > 0 && (
-            <Button variant="secondary" loading={markAll.isPending} onClick={() => markAll.mutate(unread.map((n) => n.id))}>
+            <Button variant="secondary" loading={markAll.isPending} onClick={() => markAll.mutate()}>
               <CheckCheck />
               Marcar todo como leído
             </Button>
@@ -66,8 +74,20 @@ export function NotificationsPage() {
         ) : (
           <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface shadow-card">
             {shown.map((notification) => (
-              <li key={notification.id}>
-                <NotificationItem notification={notification} onOpen={(n) => void openNotification(n)} />
+              <li key={notification.id} className="group flex items-center">
+                <div className="min-w-0 flex-1">
+                  <NotificationItem notification={notification} onOpen={(n) => void openNotification(n)} />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="mr-3 shrink-0 text-faint opacity-100 hover:text-danger sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                  aria-label="Eliminar notificación"
+                  title="Eliminar"
+                  onClick={() => remove.mutate(notification.id, { onError: (error) => toast.error(errorMessage(error)) })}
+                >
+                  <Trash2 />
+                </Button>
               </li>
             ))}
           </ul>

@@ -39,14 +39,35 @@ export function useMarkAsRead() {
   })
 }
 
-/** Marks every unread notification as read; the API only has a per-notification endpoint. */
 export function useMarkAllAsRead() {
   const queryClient = useQueryClient()
+  const key = queryKeys.notifications()
   return useMutation({
-    mutationFn: async (ids: string[]) => {
-      await Promise.all(ids.map((id) => notificationsApi.markAsRead(id)))
+    mutationFn: () => notificationsApi.markAllAsRead(),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: key })
+      const previous = queryClient.getQueryData<AppNotification[]>(key)
+      queryClient.setQueryData<AppNotification[]>(key, (items) => items?.map((n) => ({ ...n, isRead: true })))
+      return { previous }
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.notifications() }),
+    onError: (_error, _variables, context) => queryClient.setQueryData(key, context?.previous),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+  })
+}
+
+export function useDeleteNotification() {
+  const queryClient = useQueryClient()
+  const key = queryKeys.notifications()
+  return useMutation({
+    mutationFn: (id: string) => notificationsApi.delete(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: key })
+      const previous = queryClient.getQueryData<AppNotification[]>(key)
+      queryClient.setQueryData<AppNotification[]>(key, (items) => items?.filter((n) => n.id !== id))
+      return { previous }
+    },
+    onError: (_error, _id, context) => queryClient.setQueryData(key, context?.previous),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   })
 }
 

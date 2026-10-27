@@ -21,6 +21,8 @@ export interface TeamMember {
 export const teamsApi = {
   list: () => api.get<TeamSummary[]>('/teams'),
   create: (name: string) => api.post<CreatedResponse>('/teams', { name }),
+  rename: (teamId: string, name: string) => api.patch(`/teams/${teamId}`, { name }),
+  delete: (teamId: string) => api.delete(`/teams/${teamId}`),
   members: (teamId: string) => api.get<TeamMember[]>(`/teams/${teamId}/members`),
   addMember: (teamId: string, email: string, role: TeamRole) =>
     api.post(`/teams/${teamId}/members`, { email, role }),

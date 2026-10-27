@@ -17,6 +17,8 @@ interface AuthContextValue {
   signOut: () => Promise<void>
   /** Drops the local session without calling the API, e.g. after a password change revoked it. */
   endSession: () => void
+  /** Reads the signed-in user again, e.g. after a profile change. */
+  reloadUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -82,6 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [signIn],
   )
 
+  const reloadUser = useCallback(async () => {
+    const user = await authApi.me()
+    setState({ status: 'authenticated', user })
+  }, [])
+
   const endSession = useCallback(() => {
     setSession(null)
     if (typeof BroadcastChannel !== 'undefined') {
@@ -100,8 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [endSession])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status: state.status, user: state.user, signIn, signUp, signOut, endSession }),
-    [state, signIn, signUp, signOut, endSession],
+    () => ({ status: state.status, user: state.user, signIn, signUp, signOut, endSession, reloadUser }),
+    [state, signIn, signUp, signOut, endSession, reloadUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

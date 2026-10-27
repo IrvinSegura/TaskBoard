@@ -14,4 +14,6 @@ export interface AppNotification {
 export const notificationsApi = {
   list: () => api.get<AppNotification[]>('/notifications'),
   markAsRead: (notificationId: string) => api.patch(`/notifications/${notificationId}/read`),
+  markAllAsRead: () => api.post('/notifications/read-all'),
+  delete: (notificationId: string) => api.delete(`/notifications/${notificationId}`),
 }

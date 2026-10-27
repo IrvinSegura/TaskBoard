@@ -81,6 +81,19 @@ export function useRestoreCard(cardId: string, boardId: string) {
   return useCardMutation(cardId, boardId, () => cardsApi.restore(cardId))
 }
 
+/** The card's own query is left alone: refetching it would only 404 while its detail is still closing. */
+export function useDeleteCard(boardId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (cardId: string) => cardsApi.delete(cardId),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId), exact: true }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.allBoardCards(boardId) }),
+      ]),
+  })
+}
+
 export function useToggleAssignee(cardId: string, boardId: string) {
   return useCardMutation(cardId, boardId, ({ userId, assigned }: { userId: string; assigned: boolean }) =>
     assigned ? cardsApi.unassign(cardId, userId) : cardsApi.assign(cardId, userId),

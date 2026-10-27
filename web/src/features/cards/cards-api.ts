@@ -55,6 +55,7 @@ export const cardsApi = {
   update: (cardId: string, request: UpdateCardRequest) => api.put(`/cards/${cardId}`, request),
   archive: (cardId: string) => api.post(`/cards/${cardId}/archive`),
   restore: (cardId: string) => api.post(`/cards/${cardId}/restore`),
+  delete: (cardId: string) => api.delete(`/cards/${cardId}`),
   assign: (cardId: string, userId: string) => api.post(`/cards/${cardId}/assignees`, { userId }),
   unassign: (cardId: string, userId: string) => api.delete(`/cards/${cardId}/assignees/${userId}`),
 
