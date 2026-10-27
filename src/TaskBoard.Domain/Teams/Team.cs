@@ -27,6 +27,32 @@ public sealed class Team : AggregateRoot
     public bool CanManageMembers(Guid userId) =>
         _members.Any(m => m.UserId == userId && m.Role >= TeamRole.Admin);
 
+    public Result Rename(Guid actorId, string name)
+    {
+        if (!CanManageMembers(actorId))
+        {
+            return TeamErrors.NotAllowed;
+        }
+
+        Name = name.Trim();
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Only the owner can delete a team. The database removes its boards with it, so the caller passes their ids
+    /// for the event: once the team is gone nothing else knows which boards it had.
+    /// </summary>
+    public Result Delete(Guid actorId, IReadOnlyList<Guid> boardIds)
+    {
+        if (!_members.Any(m => m.UserId == actorId && m.Role == TeamRole.Owner))
+        {
+            return TeamErrors.OnlyOwnerCanDelete;
+        }
+
+        Raise(new TeamDeletedEvent(Id, Name, boardIds, _members.Select(m => m.UserId).ToList()));
+        return Result.Success();
+    }
+
     public Result AddMember(Guid actorId, Guid userId, TeamRole role)
     {
         if (!CanManageMembers(actorId))

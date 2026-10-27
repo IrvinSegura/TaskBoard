@@ -5,7 +5,10 @@ namespace TaskBoard.Domain.Teams;
 public static class TeamErrors
 {
     public static readonly Error NotAllowed =
-        Error.Forbidden("Teams.NotAllowed", "Only team owners and admins can manage members.");
+        Error.Forbidden("Teams.NotAllowed", "Only team owners and admins can manage the team.");
+
+    public static readonly Error OnlyOwnerCanDelete =
+        Error.Forbidden("Teams.OnlyOwnerCanDelete", "Only the team owner can delete the team.");
 
     public static readonly Error AlreadyMember =
         Error.Conflict("Teams.AlreadyMember", "The user is already a member of the team.");

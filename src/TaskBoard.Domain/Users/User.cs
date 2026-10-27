@@ -21,6 +21,8 @@ public sealed class User : AggregateRoot
         PasswordHash = passwordHash
     };
 
+    public void Rename(string displayName) => DisplayName = displayName.Trim();
+
     // The caller revokes the user's refresh tokens, so other sessions must sign in with the new password.
     public void ChangePassword(string passwordHash) => PasswordHash = passwordHash;
 
