@@ -129,4 +129,29 @@ public class CardTests
 
         result.Error.ShouldBe(CardErrors.Archived);
     }
+
+    [Fact]
+    public void Delete_ActiveCard_ReturnsNotArchived()
+    {
+        var card = CreateCard();
+
+        var result = card.Delete();
+
+        result.Error.ShouldBe(CardErrors.NotArchived);
+        card.DomainEvents.OfType<CardDeletedEvent>().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Delete_ArchivedCard_RaisesCardDeletedEvent()
+    {
+        var card = CreateCard();
+        card.Archive();
+
+        var result = card.Delete();
+
+        result.IsSuccess.ShouldBeTrue();
+        card.DomainEvents.OfType<CardDeletedEvent>().ShouldHaveSingleItem().ShouldSatisfyAllConditions(
+            e => e.CardId.ShouldBe(card.Id),
+            e => e.BoardId.ShouldBe(card.BoardId));
+    }
 }

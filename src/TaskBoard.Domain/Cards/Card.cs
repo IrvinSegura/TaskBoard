@@ -145,6 +145,18 @@ public sealed class Card : AggregateRoot
         Raise(new CardArchivedEvent(Id, BoardId));
     }
 
+    // Only archived cards can be deleted, so a card in use is never lost by mistake.
+    public Result Delete()
+    {
+        if (!IsArchived)
+        {
+            return CardErrors.NotArchived;
+        }
+
+        Raise(new CardDeletedEvent(Id, BoardId));
+        return Result.Success();
+    }
+
     // Returns to the column and position it had when archived.
     public void Restore()
     {

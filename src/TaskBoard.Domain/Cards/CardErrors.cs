@@ -7,6 +7,9 @@ public static class CardErrors
     public static readonly Error Archived =
         Error.Failure("Cards.Archived", "The card is archived and cannot be modified.");
 
+    public static readonly Error NotArchived =
+        Error.Failure("Cards.NotArchived", "Archive the card before deleting it.");
+
     public static readonly Error AlreadyAssigned =
         Error.Conflict("Cards.AlreadyAssigned", "The user is already assigned to the card.");
 
