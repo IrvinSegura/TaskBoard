@@ -122,6 +122,23 @@ Cómo se conecta con la API:
 - **Tiempo real**: una sola conexión de SignalR por pestaña. Al abrir un tablero el cliente llama a `JoinBoard`, y cada evento vuelve a pedir los datos afectados. Si el usuario pierde acceso al tablero, se le saca de él.
 - **Permisos**: la interfaz oculta o desactiva lo que el rol del usuario en el tablero no permite, y los tableros archivados se muestran de solo lectura; la API sigue siendo quien valida.
 
+### Datos de demostración
+
+Con la API corriendo, llena la base local con 8 personas, 3 equipos, 7 tableros y unas 40 tarjetas con etiquetas, checklists, comentarios y adjuntos:
+
+```bash
+cd web
+npm run seed:demo
+```
+
+Entra con `laura@demo.taskboard.test`; la contraseña de todas las cuentas de demostración está en `scripts/seed-demo.mjs`. Para otra API, define `API_URL`. El script se niega a correr si los datos ya existen.
+
+Para ver los datos con tu propia cuenta (ya registrada), compártelos con ella: te agrega como admin a los equipos y tableros de demostración y te asigna las mismas tarjetas que a Laura. Se puede repetir sin problema.
+
+```bash
+npm run seed:demo -- --share-with tu@email.com
+```
+
 ## Configuración
 
 La configuración está en `src/TaskBoard.Api/appsettings.json`, con los valores de desarrollo en `appsettings.Development.json`. Fuera de desarrollo, sobrescríbelos con variables de entorno (por ejemplo `ConnectionStrings__Database`) o [user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets).

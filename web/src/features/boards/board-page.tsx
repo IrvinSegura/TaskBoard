@@ -88,6 +88,7 @@ export function BoardPage() {
               filters={filters}
               onChange={setFilters}
               members={board.data.members}
+              labels={board.data.labels}
               meId={me.id}
               searching={filtered.isFetching}
               canEdit={permissions.canEdit}

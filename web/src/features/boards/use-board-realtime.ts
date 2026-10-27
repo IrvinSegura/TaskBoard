@@ -24,6 +24,9 @@ const boardEvents = [
   'CardDeleted',
   'CardAssigned',
   'CardUnassigned',
+  'LabelsChanged',
+  'CardLabelsChanged',
+  'ChecklistChanged',
 ] as const
 
 // Events that only change one card's detail (comments are not part of the board view).

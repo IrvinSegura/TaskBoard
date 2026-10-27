@@ -11,6 +11,7 @@ import { useBoardOutlet } from '@/features/boards/board-page'
 import { errorMessage } from '@/lib/api/api-error'
 import { formatLongDate } from '@/lib/utils/format'
 import { CardAttachments } from './card-attachments'
+import { CardChecklist } from './card-checklist'
 import { CardComments } from './card-comments'
 import { CardDescriptionEditor } from './card-description-editor'
 import { CardFields } from './card-fields'
@@ -82,6 +83,7 @@ export function CardDetailRoute() {
                     <Alert tone="warning">Esta tarjeta está archivada. Restáurala para editarla.</Alert>
                   )}
                   <CardDescriptionEditor card={card.data} canEdit={canEdit} />
+                  <CardChecklist card={card.data} canEdit={canEdit} />
                   <CardAttachments card={card.data} members={board.members} canEdit={canEdit} />
                   <CardComments cardId={card.data.id} canEdit={canEdit} canModerate={permissions.canAdmin} />
                 </div>

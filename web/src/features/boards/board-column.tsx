@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DropdownMenu, MenuItem, MenuSeparator } from '@/components/ui/dropdown-menu'
 import { useCurrentUser } from '@/features/auth/auth-provider'
+import type { BoardLabel } from '@/features/labels/labels-api'
 import { errorMessage } from '@/lib/api/api-error'
 import { cn } from '@/lib/utils/cn'
 import { AddCardForm } from './add-card-form'
@@ -20,6 +21,7 @@ interface BoardColumnProps {
   /** The cards to show, already filtered when a search is active. */
   cards: CardSummary[]
   members: BoardMember[]
+  labels: BoardLabel[]
   canEdit: boolean
   dragEnabled: boolean
   filtered: boolean
@@ -31,6 +33,7 @@ export function BoardColumn({
   column,
   cards,
   members,
+  labels,
   canEdit,
   dragEnabled,
   filtered,
@@ -79,6 +82,7 @@ export function BoardColumn({
               card={card}
               columnId={column.id}
               members={members}
+              labels={labels}
               draggable={dragEnabled}
               onOpen={onOpenCard}
             />

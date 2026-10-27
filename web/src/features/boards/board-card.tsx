@@ -1,7 +1,10 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { ListChecks } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 import { AvatarStack } from '@/components/ui/avatar'
+import { LabelChip } from '@/features/labels/label-chip'
+import { labelsByIds, type BoardLabel } from '@/features/labels/labels-api'
 import { cn } from '@/lib/utils/cn'
 import type { BoardMember, CardSummary } from './boards-api'
 import { DueDateChip, PriorityBadge } from './card-meta'
@@ -9,17 +12,20 @@ import { DueDateChip, PriorityBadge } from './card-meta'
 interface BoardCardViewProps {
   card: CardSummary
   members: BoardMember[]
+  labels: BoardLabel[]
   dragging?: boolean
   overlay?: boolean
 }
 
 /** The card tile itself, shared by the list and the drag overlay. */
-export function BoardCardView({ card, members, dragging, overlay }: BoardCardViewProps) {
+export function BoardCardView({ card, members, labels, dragging, overlay }: BoardCardViewProps) {
   const assignees = card.assigneeIds
     .map((id) => members.find((member) => member.userId === id))
     .filter((member) => member !== undefined)
     .map((member) => ({ id: member.userId, name: member.displayName }))
-  const hasMeta = card.priority !== 'None' || card.dueDate || assignees.length > 0
+  const cardLabels = labelsByIds(labels, card.labelIds)
+  const checklist = card.checklist
+  const hasMeta = card.priority !== 'None' || card.dueDate || checklist || assignees.length > 0
 
   return (
     <div
@@ -30,11 +36,32 @@ export function BoardCardView({ card, members, dragging, overlay }: BoardCardVie
         overlay && 'rotate-2 cursor-grabbing border-primary/40 shadow-overlay',
       )}
     >
+      {cardLabels.length > 0 && (
+        <div className="mb-1.5 flex flex-wrap gap-1">
+          {cardLabels.map((label) => (
+            <LabelChip key={label.id} label={label} className="px-1.5 py-0 text-[11px]" />
+          ))}
+        </div>
+      )}
       <p className="text-sm leading-snug font-medium break-words">{card.title}</p>
       {hasMeta && (
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
           <PriorityBadge priority={card.priority} />
           {card.dueDate && <DueDateChip dueDate={card.dueDate} />}
+          {checklist && (
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium tabular-nums',
+                checklist.done === checklist.total
+                  ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
+                  : 'bg-muted-surface text-muted',
+              )}
+              title="Checklist"
+            >
+              <ListChecks className="size-3" />
+              {checklist.done}/{checklist.total}
+            </span>
+          )}
           {assignees.length > 0 && (
             <div className="ml-auto">
               <AvatarStack people={assignees} size="xs" max={3} />
@@ -50,11 +77,12 @@ interface BoardCardProps {
   card: CardSummary
   columnId: string
   members: BoardMember[]
+  labels: BoardLabel[]
   draggable: boolean
   onOpen: (cardId: string) => void
 }
 
-export function BoardCard({ card, columnId, members, draggable, onOpen }: BoardCardProps) {
+export function BoardCard({ card, columnId, members, labels, draggable, onOpen }: BoardCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { type: 'card', columnId },
@@ -88,7 +116,7 @@ export function BoardCard({ card, columnId, members, draggable, onOpen }: BoardC
         }}
         className={cn('cursor-pointer rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring', draggable && 'touch-manipulation')}
       >
-        <BoardCardView card={card} members={members} dragging={isDragging} />
+        <BoardCardView card={card} members={members} labels={labels} dragging={isDragging} />
       </div>
     </li>
   )
