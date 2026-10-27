@@ -29,4 +29,6 @@ internal sealed class CardRepository(ApplicationDbContext db) : ICardRepository
             .ToListAsync(cancellationToken);
 
     public void Add(Card card) => db.Cards.Add(card);
+
+    public void Remove(Card card) => db.Cards.Remove(card);
 }

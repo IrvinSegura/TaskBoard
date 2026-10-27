@@ -32,4 +32,6 @@ internal sealed class BoardRepository(ApplicationDbContext db) : IBoardRepositor
             .ToListAsync(cancellationToken);
 
     public void Add(Board board) => db.Boards.Add(board);
+
+    public void Remove(Board board) => db.Boards.Remove(board);
 }

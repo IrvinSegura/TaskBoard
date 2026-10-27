@@ -16,4 +16,7 @@ public interface ICardRepository
     Task<IReadOnlyList<Card>> GetColumnCardsAsync(Guid columnId, CancellationToken cancellationToken);
 
     void Add(Card card);
+
+    // The database deletes the card's comments and attachments with it.
+    void Remove(Card card);
 }

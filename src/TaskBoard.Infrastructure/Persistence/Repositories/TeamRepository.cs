@@ -12,4 +12,6 @@ internal sealed class TeamRepository(ApplicationDbContext db) : ITeamRepository
             .SingleOrDefaultAsync(t => t.Id == teamId, cancellationToken);
 
     public void Add(Team team) => db.Teams.Add(team);
+
+    public void Remove(Team team) => db.Teams.Remove(team);
 }
