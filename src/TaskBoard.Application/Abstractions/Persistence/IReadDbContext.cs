@@ -2,6 +2,7 @@ using TaskBoard.Domain.Activities;
 using TaskBoard.Domain.Attachments;
 using TaskBoard.Domain.Boards;
 using TaskBoard.Domain.Cards;
+using TaskBoard.Domain.Chat;
 using TaskBoard.Domain.Checklists;
 using TaskBoard.Domain.Comments;
 using TaskBoard.Domain.Favorites;
@@ -45,4 +46,14 @@ public interface IReadDbContext
     IQueryable<ActivityEntry> Activities { get; }
 
     IQueryable<Favorite> Favorites { get; }
+
+    IQueryable<Conversation> Conversations { get; }
+
+    IQueryable<ConversationParticipant> ConversationParticipants { get; }
+
+    IQueryable<ConversationReadMarker> ConversationReadMarkers { get; }
+
+    IQueryable<ChatMessage> ChatMessages { get; }
+
+    IQueryable<ChatAttachment> ChatAttachments { get; }
 }
