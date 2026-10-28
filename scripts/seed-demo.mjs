@@ -31,6 +31,7 @@ const inDays = (days) => new Date(Date.now() + days * day).toISOString()
 // ---------------------------------------------------------------------------------------------
 // Data. Cards: [title, { description, priority, due (days from today), assignees, labels,
 // checklist: [[text, done]], comments: [[person, text]], archived, attachment }]
+// In comments, @key (for example @laura) becomes a mention of that person.
 // ---------------------------------------------------------------------------------------------
 
 const teams = [
@@ -62,7 +63,7 @@ const teams = [
             ['Límite de intentos en el inicio de sesión', { priority: 'High', due: 6, assignees: ['diego'], labels: ['Backend'] }],
           ],
           'En curso': [
-            ['Notificaciones push', { description: 'Firebase en Android y APNs en iOS, con preferencias por tipo de aviso.', priority: 'High', due: 3, assignees: ['diego', 'laura'], labels: ['Backend'], checklist: [['Registro del dispositivo', true], ['Envío desde el servidor', true], ['Preferencias por tipo', false], ['Pruebas en iOS', false]], comments: [['diego', 'El envío desde el servidor ya funciona en staging.'], ['carlos', '@Laura ¿lo probamos el jueves con el equipo de QA?']] }],
+            ['Notificaciones push', { description: 'Firebase en Android y APNs en iOS, con preferencias por tipo de aviso.', priority: 'High', due: 3, assignees: ['diego', 'laura'], labels: ['Backend'], checklist: [['Registro del dispositivo', true], ['Envío desde el servidor', true], ['Preferencias por tipo', false], ['Pruebas en iOS', false]], comments: [['diego', 'El envío desde el servidor ya funciona en staging.'], ['carlos', '@laura ¿lo probamos el jueves con el equipo de QA?']] }],
             ['Pantalla de detalle de tarea', { priority: 'Medium', due: 5, assignees: ['valentina'], labels: ['Frontend'], checklist: [['Cabecera y estado', true], ['Comentarios', true], ['Adjuntos', false]] }],
             ['Sistema de diseño en Figma', { priority: 'Medium', due: 1, assignees: ['sofia'], labels: ['Diseño'], checklist: [['Colores y tipografía', true], ['Botones y campos', true], ['Componentes de lista', true], ['Documentación', false]], attachment: ['guia-de-estilo.txt', 'Colores primarios: índigo 600 y pizarra 900.\nTipografía: Inter.\n'] }],
           ],
@@ -146,7 +147,7 @@ const teams = [
         ],
         columns: {
           Planificación: [
-            ['Definir mensajes clave', { priority: 'High', due: 2, assignees: ['mariana', 'laura'], checklist: [['Público objetivo', true], ['Propuesta de valor', false]], comments: [['mariana', 'Laura, ¿me ayudas con la propuesta de valor del producto?']] }],
+            ['Definir mensajes clave', { priority: 'High', due: 2, assignees: ['mariana', 'laura'], checklist: [['Público objetivo', true], ['Propuesta de valor', false]], comments: [['mariana', '@laura ¿me ayudas con la propuesta de valor del producto?']] }],
             ['Presupuesto por canal', { priority: 'Medium', due: 5, assignees: ['javier'] }],
           ],
           Producción: [
@@ -319,7 +320,10 @@ async function createCard(owner, columnId, labelIds, title, spec) {
       await call('PATCH', `/cards/${cardId}/checklist/${itemId}`, { token, body: { isDone: true } })
     }
   }
-  for (const [key, body] of spec.comments ?? []) {
+  for (const [key, text] of spec.comments ?? []) {
+    const body = text.replace(/@(\w+)/g, (match, person) =>
+      users[person] ? `@[${people[person]}](user:${users[person].id})` : match,
+    )
     await call('POST', `/cards/${cardId}/comments`, { token: users[key].token, body: { body } })
   }
   if (spec.attachment) {
