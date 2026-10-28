@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Behaviors;
 using TaskBoard.Application.Features.Auth;
+using TaskBoard.Application.Features.Chat;
 using TaskBoard.Application.Features.Notifications;
 
 namespace TaskBoard.Application;
@@ -41,6 +42,7 @@ public static class DependencyInjection
         services.AddScoped<BoardAuthorizer>();
         services.AddScoped<NotificationPublisher>();
         services.AddScoped<AuthTokenService>();
+        services.AddScoped<ChatAccess>();
 
         return services;
     }

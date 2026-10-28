@@ -1,3 +1,4 @@
+using TaskBoard.Application.Features.Chat;
 using TaskBoard.Domain.Cards;
 using TaskBoard.Domain.Notifications;
 
@@ -59,6 +60,16 @@ public sealed record AttachmentAddedMessage(Guid AttachmentId, Guid CardId, stri
 public sealed record AttachmentDeletedMessage(Guid AttachmentId, Guid CardId);
 
 public sealed record TeamDeletedMessage(Guid TeamId, string Name);
+
+public sealed record ChatMessageReceivedMessage(ChatMessageResponse Message);
+
+public sealed record ChatMessageUpdatedMessage(Guid MessageId, Guid ConversationId, string? Body);
+
+public sealed record ChatMessageDeletedMessage(Guid MessageId, Guid ConversationId);
+
+public sealed record ConversationUpdatedMessage(Guid ConversationId);
+
+public sealed record ConversationReadMessage(Guid ConversationId);
 
 public sealed record NotificationMessage(
     Guid NotificationId,

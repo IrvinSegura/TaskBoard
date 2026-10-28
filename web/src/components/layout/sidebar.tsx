@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Home,
   ListChecks,
+  MessagesSquare,
   Plus,
   Settings,
   Star,
@@ -19,6 +20,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/feedback'
 import { useCurrentUser } from '@/features/auth/auth-provider'
 import { useTeamBoards } from '@/features/boards/board-queries'
+import { useChatUnreadCount } from '@/features/chat/chat-queries'
 import { boardCover } from '@/features/boards/board-cover'
 import { useUnreadCount } from '@/features/notifications/notification-queries'
 import { CreateTeamDialog } from '@/features/teams/create-team-dialog'
@@ -51,6 +53,7 @@ const workspaceLinks = [
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const teams = useTeams()
   const unread = useUnreadCount()
+  const unreadMessages = useChatUnreadCount()
   const [creating, setCreating] = useState(false)
 
   return (
@@ -76,6 +79,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <NavLink to="/favorites" className={navLinkClass} onClick={onNavigate}>
           <Star />
           Favoritos
+        </NavLink>
+        <NavLink to="/chat" className={navLinkClass} onClick={onNavigate}>
+          <MessagesSquare />
+          Mensajes
+          {unreadMessages > 0 && <CountBadge count={unreadMessages} />}
         </NavLink>
         <NavLink to="/notifications" className={navLinkClass} onClick={onNavigate}>
           <Bell />
@@ -132,6 +140,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <UserCard onNavigate={onNavigate} />
       <CreateTeamDialog open={creating} onOpenChange={setCreating} />
     </div>
+  )
+}
+
+function CountBadge({ count }: { count: number }) {
+  return (
+    <span className="ml-auto rounded-full bg-primary px-1.5 text-[11px] leading-5 font-semibold text-primary-fg tabular-nums">
+      {count > 99 ? '99+' : count}
+    </span>
   )
 }
 

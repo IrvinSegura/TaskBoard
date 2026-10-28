@@ -12,8 +12,11 @@ Tablero de tareas estilo Kanban: una API construida con ASP.NET Core y un fronte
 - **Columnas y tarjetas**: crear, renombrar, reordenar y eliminar columnas (con sus tarjetas); crear, editar, mover, archivar, restaurar y eliminar tarjetas archivadas, asignar o desasignar miembros, y buscar o filtrar las tarjetas de un tablero.
 - **Etiquetas y checklists**: etiquetas de colores por tablero que se ponen en las tarjetas y sirven de filtro; una checklist por tarjeta, con su avance en el tablero.
 - **Comentarios y adjuntos**: agregar, editar y borrar comentarios; subir, descargar y borrar archivos (disco local o Azure Blob Storage).
-- **Notificaciones**: avisos cuando te asignan una tarjeta, comentan en ella o te agregan a un equipo o tablero; con marca de leído, marcar todas como leídas y eliminarlas.
-- **Tiempo real**: eventos de tablero y notificaciones enviados por SignalR.
+- **Notificaciones**: avisos cuando te asignan una tarjeta, te mencionan con `@`, comentan en una tarjeta tuya o te agregan a un equipo o tablero; con marca de leído, marcar todas como leídas y eliminarlas.
+- **Actividad**: historial de quién creó, movió, editó, comentó o archivó qué, por tarjeta, tablero, equipo y en general.
+- **Favoritos y calendario**: marcar equipos y tableros con estrella para tenerlos a mano, y un calendario mensual con las fechas límite y la actividad de todos tus tableros.
+- **Chat**: mensajes directos entre usuarios, grupos y un canal por equipo y por tablero, con enlaces, imágenes, audio (incluidas notas de voz grabadas en el navegador), video y documentos; editar y borrar mensajes, y contador de no leídos.
+- **Tiempo real**: eventos de tablero, notificaciones y chat enviados por SignalR.
 - **Frontend**: aplicación web en React con tableros arrastrables, detalle de tarjetas, comentarios, adjuntos, filtros, notificaciones en vivo y modo claro/oscuro.
 - **Operación**: health checks (`/health`), imagen Docker, migraciones como paso de despliegue y soporte para varias instancias con Redis.
 
@@ -60,6 +63,8 @@ Decisiones de diseño principales:
 
 - **Handlers y decoradores**: cada comando y consulta pasa por decoradores de logging, validación y autorización por tablero.
 - **Patrón Result**: los handlers devuelven `Result`/`Result<T>` en lugar de lanzar excepciones para errores esperados; los endpoints los convierten en Problem Details.
+- **Menciones**: en el cuerpo de un comentario se guardan como `@[Nombre](user:id)`. Al crearse el comentario se avisa a cada persona mencionada que tenga acceso al tablero y al resto de los asignados de la tarjeta.
+- **Historial de actividad**: cada mensaje del outbox guarda quién hizo el cambio (`ActorId`), y un proyector convierte los eventos en líneas de actividad con los nombres de ese momento, para que el historial se lea igual aunque luego se borre la tarjeta.
 - **Outbox transaccional**: los eventos de dominio se guardan como mensajes de outbox en la misma transacción y un proceso en segundo plano los despacha, enviando luego notificaciones y mensajes de SignalR. Cada instancia reserva un lote con `FOR UPDATE SKIP LOCKED` y un plazo (`LockedUntil`), así que con varias instancias cada mensaje se procesa una sola vez; si una instancia muere, otra retoma su lote cuando vence el plazo.
 - **Autorización por tablero**: las peticiones que tocan un tablero se validan contra el rol del usuario en ese tablero antes de ejecutar el handler. Los tableros archivados rechazan cualquier escritura. Los roles se guardan en caché 30 segundos y se invalidan en cuanto cambian los miembros del tablero o del equipo.
 - **Posiciones fraccionarias**: mover una tarjeta o columna solo cambia su propia posición. Cuando el hueco entre dos vecinas se vuelve demasiado pequeño, la columna (o el tablero) se renumera conservando el orden.
@@ -227,6 +232,30 @@ El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-toke
 | `POST` | `/cards/{cardId}/attachments` | Subir un adjunto (multipart, máximo 10 MB). |
 | `GET` | `/attachments/{attachmentId}` | Descargar un adjunto. |
 | `DELETE` | `/attachments/{attachmentId}` | Borrar un adjunto y su archivo (quien lo subió o admin del tablero). |
+| `GET` | `/me/activity` | Actividad de todos los tableros que puedo ver, de la más reciente a la más antigua. Paginado. |
+| `GET` | `/teams/{teamId}/activity` | Actividad de los tableros del equipo que puedo ver. Paginado. |
+| `GET` | `/boards/{boardId}/activity` | Actividad de un tablero. Paginado. |
+| `GET` | `/cards/{cardId}/activity` | Historial de una tarjeta. Paginado. |
+| `GET` | `/me/calendar?from=&to=` | Tarjetas activas con fecha límite y actividad entre `from` (incluido) y `to` (excluido), de todos los tableros que puedo ver. Rango de hasta 45 días; la actividad trae como mucho 1000 entradas, las más recientes (`activityTruncated` avisa si había más). |
+| `GET` | `/me/favorites` | Mis equipos y tableros favoritos (sin los archivados ni los que ya no puedo ver). |
+| `PUT` | `/me/favorites/boards/{boardId}` | Marcar un tablero como favorito. Idempotente. |
+| `DELETE` | `/me/favorites/boards/{boardId}` | Quitar un tablero de favoritos. Idempotente. |
+| `PUT` | `/me/favorites/teams/{teamId}` | Marcar un equipo como favorito. Idempotente. |
+| `DELETE` | `/me/favorites/teams/{teamId}` | Quitar un equipo de favoritos. Idempotente. |
+| `GET` | `/chat/conversations` | Mis conversaciones (directas, grupos y los canales de mis equipos y tableros no archivados), con el último mensaje y los no leídos, de la más reciente a la más antigua. |
+| `GET` | `/chat/conversations/{conversationId}` | Una conversación. 404 si no existe o no puedo abrirla. |
+| `GET` | `/chat/contacts` | Las personas con las que comparto un equipo o tablero. |
+| `POST` | `/chat/conversations/direct` | Abrir (o crear la primera vez) la conversación directa con alguien, por `userId` o `email`. |
+| `POST` | `/chat/conversations/group` | Crear un grupo con `title` y `participantIds` (hasta 50 personas). |
+| `PATCH` | `/chat/conversations/{conversationId}` | Renombrar un grupo. |
+| `POST` | `/chat/conversations/{conversationId}/participants` | Agregar personas a un grupo. |
+| `DELETE` | `/chat/conversations/{conversationId}/participants/me` | Salir de un grupo. |
+| `POST` | `/chat/conversations/{conversationId}/read` | Marcar la conversación como leída. |
+| `GET` | `/chat/conversations/{conversationId}/messages` | Mensajes, los más recientes primero por página y cada página del más antiguo al más reciente; `before` (id de un mensaje) trae los anteriores. |
+| `POST` | `/chat/conversations/{conversationId}/messages` | Enviar un mensaje (multipart): campo `body` y archivos `files`. Hasta 10 archivos de 25 MB, 50 MB por mensaje. |
+| `PATCH` | `/chat/messages/{messageId}` | Editar el texto de un mensaje propio. |
+| `DELETE` | `/chat/messages/{messageId}` | Borrar un mensaje propio: queda como "mensaje eliminado" y sus archivos se borran. |
+| `GET` | `/chat/attachments/{attachmentId}` | Descargar un archivo del chat. |
 | `GET` | `/notifications` | Listar mis notificaciones. |
 | `PATCH` | `/notifications/{notificationId}/read` | Marcar una notificación como leída. |
 | `POST` | `/notifications/read-all` | Marcar todas mis notificaciones como leídas. |
@@ -242,6 +271,7 @@ Conéctate al hub de SignalR en `/hubs/board`. Los navegadores envían el token 
 - Eventos de tablero: `BoardRenamed`, `BoardArchived`, `BoardRestored`, `BoardDeleted`, `BoardMemberRemoved`, `ColumnCreated`, `ColumnRenamed`, `ColumnMoved`, `ColumnDeleted`, `CardCreated`, `CardUpdated`, `CardMoved`, `CardArchived`, `CardRestored`, `CardDeleted`, `CardAssigned`, `CardUnassigned`, `LabelsChanged`, `CardLabelsChanged`, `ChecklistChanged`, `CommentAdded`, `CommentEdited`, `CommentDeleted`, `AttachmentAdded`, `AttachmentDeleted`.
 - Cuando un usuario pierde acceso a un tablero, el servidor envía `BoardMemberRemoved` con su propio id a cada una de sus conexiones y luego las saca del grupo, para que el cliente pueda cerrar el tablero. Ese mensaje puede llegarle dos veces (el aviso directo y el del grupo), así que el cliente debe tratarlo de forma idempotente.
 - Eventos personales: `NotificationReceived` y `TeamDeleted` (a cada miembro de un equipo eliminado), que llegan a todas las conexiones del usuario sin unirse a ningún tablero.
+- Eventos de chat, a todas las conexiones de quienes pueden abrir la conversación (sin unirse a nada): `ChatMessageReceived`, `ChatMessageUpdated`, `ChatMessageDeleted`, `ConversationUpdated` (grupo renombrado o con otras personas; también le llega a quien salió) y `ConversationRead` (solo a quien leyó, para sus otras pestañas).
 - Con `ConnectionStrings:Redis` configurado, los mensajes llegan a los clientes conectados a cualquier instancia, y cada instancia saca del grupo a sus propias conexiones cuando un usuario pierde acceso.
 
 ## Despliegue

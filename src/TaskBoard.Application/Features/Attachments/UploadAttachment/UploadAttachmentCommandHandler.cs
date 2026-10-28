@@ -3,6 +3,7 @@ using TaskBoard.Application.Abstractions.Authentication;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Abstractions.Persistence;
 using TaskBoard.Application.Abstractions.Storage;
+using TaskBoard.Application.Common.Files;
 using TaskBoard.Domain.Attachments;
 using TaskBoard.Domain.Cards;
 using TaskBoard.Domain.Common;

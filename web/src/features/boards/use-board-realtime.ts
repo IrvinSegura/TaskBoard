@@ -63,6 +63,10 @@ export function useBoardRealtime(boardId: string, teamId: string | undefined, en
       void queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId), exact: true })
       void queryClient.invalidateQueries({ queryKey: queryKeys.allBoardCards(boardId) })
     }
+    // Activity is written by the server after the change, so any board event may come with new lines.
+    if (board || cards.size > 0) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.allActivity() })
+    }
     if (teamLists && teamId) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.allTeamBoards(teamId) })
     }

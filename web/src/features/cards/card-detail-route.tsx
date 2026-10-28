@@ -1,5 +1,5 @@
 import * as RadixDialog from '@radix-ui/react-dialog'
-import { Archive, ArchiveRestore, Trash2, X } from 'lucide-react'
+import { Activity, Archive, ArchiveRestore, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
@@ -7,6 +7,7 @@ import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
+import { ActivityFeed } from '@/features/activity/activity-feed'
 import { useBoardOutlet } from '@/features/boards/board-page'
 import { errorMessage } from '@/lib/api/api-error'
 import { formatLongDate } from '@/lib/utils/format'
@@ -17,6 +18,7 @@ import { CardDescriptionEditor } from './card-description-editor'
 import { CardFields } from './card-fields'
 import { useArchiveCard, useCard, useDeleteCard, useRestoreCard } from './card-queries'
 import { CardTitleEditor } from './card-title-editor'
+import { SectionTitle } from './section-title'
 
 /** The card detail, rendered over the board as /boards/:boardId/cards/:cardId so it can be linked. */
 export function CardDetailRoute() {
@@ -85,7 +87,20 @@ export function CardDetailRoute() {
                   <CardDescriptionEditor card={card.data} canEdit={canEdit} />
                   <CardChecklist card={card.data} canEdit={canEdit} />
                   <CardAttachments card={card.data} members={board.members} canEdit={canEdit} />
-                  <CardComments cardId={card.data.id} canEdit={canEdit} canModerate={permissions.canAdmin} />
+                  <CardComments
+                    cardId={card.data.id}
+                    members={board.members}
+                    canEdit={canEdit}
+                    canModerate={permissions.canAdmin}
+                  />
+                  <section>
+                    <SectionTitle icon={Activity}>Actividad</SectionTitle>
+                    <ActivityFeed
+                      scope={{ kind: 'card', id: card.data.id }}
+                      pageSize={10}
+                      emptyText="Los cambios de esta tarjeta aparecerán aquí."
+                    />
+                  </section>
                 </div>
 
                 <aside className="space-y-6 border-line bg-subtle/60 px-5 py-5 md:border-l">

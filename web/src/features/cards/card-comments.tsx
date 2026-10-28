@@ -4,36 +4,46 @@ import { toast } from 'sonner'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
-import { Textarea } from '@/components/ui/input'
 import { useCurrentUser } from '@/features/auth/auth-provider'
+import type { BoardMember } from '@/features/boards/boards-api'
 import { errorMessage } from '@/lib/api/api-error'
 import { formatRelative } from '@/lib/utils/format'
 import { useAddComment, useCardComments, useDeleteComment, useEditComment } from './card-queries'
 import type { CardComment } from './cards-api'
+import { CommentBody } from './comment-body'
+import { MentionTextarea } from './mention-textarea'
+import { decodeMentions, encodeMentions, type Mention } from './mentions'
 import { SectionTitle } from './section-title'
 
 const maxLength = 4000
 
 interface CardCommentsProps {
   cardId: string
+  /** The board's members, who can be mentioned with "@". */
+  members: BoardMember[]
   canEdit: boolean
   /** Board admins can delete anyone's comment. */
   canModerate: boolean
 }
 
-export function CardComments({ cardId, canEdit, canModerate }: CardCommentsProps) {
+export function CardComments({ cardId, members, canEdit, canModerate }: CardCommentsProps) {
   const me = useCurrentUser()
   const comments = useCardComments(cardId)
   const addComment = useAddComment(cardId)
   const [body, setBody] = useState('')
+  const [mentions, setMentions] = useState<Mention[]>([])
+  const mentionable = members.filter((member) => member.userId !== me.id)
 
   const submit = () => {
     const trimmed = body.trim()
     if (!trimmed) {
       return
     }
-    addComment.mutate(trimmed, {
-      onSuccess: () => setBody(''),
+    addComment.mutate(encodeMentions(trimmed, mentions), {
+      onSuccess: () => {
+        setBody('')
+        setMentions([])
+      },
       onError: (error) => toast.error(errorMessage(error)),
     })
   }
@@ -70,6 +80,7 @@ export function CardComments({ cardId, canEdit, canModerate }: CardCommentsProps
                 key={comment.id}
                 cardId={cardId}
                 comment={comment}
+                members={mentionable}
                 canEdit={canEdit && comment.authorId === me.id}
                 canDelete={canEdit && (comment.authorId === me.id || canModerate)}
               />
@@ -93,15 +104,16 @@ export function CardComments({ cardId, canEdit, canModerate }: CardCommentsProps
         <div className="mt-5 flex gap-3">
           <Avatar id={me.id} name={me.displayName} />
           <div className="flex-1 space-y-2">
-            <Textarea
-              rows={2}
+            <MentionTextarea
               value={body}
+              onChange={setBody}
+              mentions={mentions}
+              onMentionsChange={setMentions}
+              members={mentionable}
               maxLength={maxLength}
-              onChange={(event) => setBody(event.target.value)}
               onKeyDown={onKeyDown}
-              placeholder="Escribe un comentario…"
+              placeholder="Escribe un comentario… usa @ para mencionar"
               aria-label="Nuevo comentario"
-              className="min-h-16"
             />
             <div className="flex items-center gap-3">
               <Button size="sm" onClick={submit} disabled={!body.trim()} loading={addComment.isPending}>
@@ -119,24 +131,33 @@ export function CardComments({ cardId, canEdit, canModerate }: CardCommentsProps
 interface CommentItemProps {
   cardId: string
   comment: CardComment
+  members: BoardMember[]
   canEdit: boolean
   canDelete: boolean
 }
 
-function CommentItem({ cardId, comment, canEdit, canDelete }: CommentItemProps) {
+function CommentItem({ cardId, comment, members, canEdit, canDelete }: CommentItemProps) {
   const editComment = useEditComment(cardId)
   const deleteComment = useDeleteComment(cardId)
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(comment.body)
+  const [draft, setDraft] = useState('')
+  const [mentions, setMentions] = useState<Mention[]>([])
+
+  const startEditing = () => {
+    const decoded = decodeMentions(comment.body)
+    setDraft(decoded.text)
+    setMentions(decoded.mentions)
+    setEditing(true)
+  }
 
   const save = () => {
-    const trimmed = draft.trim()
-    if (!trimmed || trimmed === comment.body) {
+    const body = encodeMentions(draft.trim(), mentions)
+    if (!body || body === comment.body) {
       setEditing(false)
       return
     }
     editComment.mutate(
-      { commentId: comment.id, body: trimmed },
+      { commentId: comment.id, body },
       {
         onSuccess: () => setEditing(false),
         onError: (error) => toast.error(errorMessage(error)),
@@ -160,10 +181,7 @@ function CommentItem({ cardId, comment, canEdit, canDelete }: CommentItemProps) 
                 variant="ghost"
                 size="icon-sm"
                 aria-label="Editar comentario"
-                onClick={() => {
-                  setDraft(comment.body)
-                  setEditing(true)
-                }}
+                onClick={startEditing}
               >
                 <Pencil />
               </Button>
@@ -186,12 +204,14 @@ function CommentItem({ cardId, comment, canEdit, canDelete }: CommentItemProps) 
         </div>
         {editing ? (
           <div className="mt-1.5 space-y-2">
-            <Textarea
+            <MentionTextarea
               autoFocus
-              rows={2}
               value={draft}
+              onChange={setDraft}
+              mentions={mentions}
+              onMentionsChange={setMentions}
+              members={members}
               maxLength={maxLength}
-              onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Escape') {
                   event.stopPropagation()
@@ -202,7 +222,6 @@ function CommentItem({ cardId, comment, canEdit, canDelete }: CommentItemProps) 
                 }
               }}
               aria-label="Editar comentario"
-              className="min-h-16"
             />
             <div className="flex gap-2">
               <Button size="sm" onClick={save} loading={editComment.isPending}>
@@ -215,7 +234,7 @@ function CommentItem({ cardId, comment, canEdit, canDelete }: CommentItemProps) 
           </div>
         ) : (
           <p className="mt-1 rounded-lg rounded-tl-sm bg-subtle px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words">
-            {comment.body}
+            <CommentBody body={comment.body} />
           </p>
         )}
       </div>

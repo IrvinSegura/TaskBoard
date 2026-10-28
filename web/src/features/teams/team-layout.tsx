@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useOutletContext, useParams } from 'react-router
 import { PageContainer } from '@/components/layout/page-header'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback'
 import { boardCover } from '@/features/boards/board-cover'
+import { FavoriteButton } from '@/features/favorites/favorite-button'
 import { cn } from '@/lib/utils/cn'
 import { TeamAvatar } from './team-avatar'
 import { TeamRoleBadge } from './team-role-badge'
@@ -69,7 +70,8 @@ export function TeamLayout() {
         <div className={cn('relative h-24 bg-linear-to-br sm:h-28', boardCover(team.id))}>
           <div className="bg-dots absolute inset-0 opacity-60" aria-hidden="true" />
         </div>
-        <div className="flex flex-wrap items-end gap-x-4 gap-y-2 px-5 pb-5 sm:px-6">
+        {/* Relative so the avatar paints above the cover, which is positioned and would cover it. */}
+        <div className="relative flex flex-wrap items-end gap-x-4 gap-y-2 px-5 pb-5 sm:px-6">
           <TeamAvatar id={team.id} name={team.name} size="xl" className="-mt-8 ring-4 ring-surface" />
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl font-semibold tracking-tight">{team.name}</h1>
@@ -77,7 +79,10 @@ export function TeamLayout() {
               {team.memberCount} {team.memberCount === 1 ? 'miembro' : 'miembros'}
             </p>
           </div>
-          <TeamRoleBadge role={team.myRole} />
+          <div className="flex items-center gap-2">
+            <TeamRoleBadge role={team.myRole} />
+            <FavoriteButton kind="team" id={team.id} name={team.name} />
+          </div>
         </div>
       </header>
 

@@ -88,7 +88,8 @@ export function useOpenNotification() {
     try {
       switch (notification.type) {
         case 'CardAssigned':
-        case 'CommentAdded': {
+        case 'CommentAdded':
+        case 'Mentioned': {
           // The notification only has the card id; the card says which board it is on.
           const card = await cardsApi.get(id)
           navigate(`/boards/${card.boardId}/cards/${card.id}`)

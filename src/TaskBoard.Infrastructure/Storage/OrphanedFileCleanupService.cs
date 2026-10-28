@@ -9,7 +9,7 @@ using TaskBoard.Infrastructure.Persistence;
 namespace TaskBoard.Infrastructure.Storage;
 
 /// <summary>
-/// Deletes stored files that no attachment row points to, e.g. when the upload succeeded
+/// Deletes stored files that no card or chat attachment row points to, e.g. when the upload succeeded
 /// but saving the row failed or the process died in between.
 /// </summary>
 // Safe to run on several instances at once: deleting a file twice is a no-op.
@@ -93,6 +93,7 @@ internal sealed class OrphanedFileCleanupService(
         var referenced = await db.Attachments
             .Where(a => storageKeys.Contains(a.StorageKey))
             .Select(a => a.StorageKey)
+            .Concat(db.ChatAttachments.Where(a => storageKeys.Contains(a.StorageKey)).Select(a => a.StorageKey))
             .ToListAsync(cancellationToken);
 
         var orphans = storageKeys.Except(referenced).ToList();

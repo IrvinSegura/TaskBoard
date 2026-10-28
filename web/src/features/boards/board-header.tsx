@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DropdownMenu, MenuItem, MenuSeparator } from '@/components/ui/dropdown-menu'
+import { FavoriteButton } from '@/features/favorites/favorite-button'
 import { errorMessage } from '@/lib/api/api-error'
 import { useRealtime } from '@/lib/realtime/realtime-provider'
 import { cn } from '@/lib/utils/cn'
@@ -111,6 +112,7 @@ export function BoardHeader({ board, location, permissions }: BoardHeaderProps) 
             {rename.isPending ? rename.variables : board.name}
           </h1>
         )}
+        <FavoriteButton kind="board" id={board.id} name={board.name} className="-ml-1.5" />
         <div className="flex items-center gap-2 text-xs text-muted">
           <VisibilityLabel visibility={board.visibility} />
           {permissions.role && <Badge>{boardRoleLabels[permissions.role]}</Badge>}

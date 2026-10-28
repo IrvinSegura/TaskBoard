@@ -1,4 +1,4 @@
-import { LayoutGrid, MessageSquare, UserCheck, Users } from 'lucide-react'
+import { AtSign, LayoutGrid, MessageSquare, UserCheck, Users } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { formatRelative } from '@/lib/utils/format'
 import { notificationText } from './notification-text'
@@ -9,6 +9,7 @@ const typeMeta: Record<NotificationType, { icon: typeof Users; className: string
   CommentAdded: { icon: MessageSquare, className: 'bg-sky-500/12 text-sky-600 dark:text-sky-400', label: 'Comentario' },
   AddedToBoard: { icon: LayoutGrid, className: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400', label: 'Tablero' },
   AddedToTeam: { icon: Users, className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400', label: 'Equipo' },
+  Mentioned: { icon: AtSign, className: 'bg-fuchsia-500/12 text-fuchsia-600 dark:text-fuchsia-400', label: 'Mención' },
 }
 
 /** Icon, message and time of a notification, without the clickable wrapper. */

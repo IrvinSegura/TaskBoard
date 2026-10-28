@@ -65,4 +65,18 @@ public interface IBoardClient
 
     // Sent to every member of a deleted team, wherever they are in the app.
     Task TeamDeleted(TeamDeletedMessage message);
+
+    // Chat events go to everyone who can open the conversation, wherever they are in the app.
+    Task ChatMessageReceived(ChatMessageReceivedMessage message);
+
+    Task ChatMessageUpdated(ChatMessageUpdatedMessage message);
+
+    // The message stays as "deleted", without its text and files.
+    Task ChatMessageDeleted(ChatMessageDeletedMessage message);
+
+    // A group was renamed or changed participants; also reaches the people who just left it.
+    Task ConversationUpdated(ConversationUpdatedMessage message);
+
+    // Only to the reader, so their other tabs clear the unread count too.
+    Task ConversationRead(ConversationReadMessage message);
 }
