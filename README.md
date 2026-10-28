@@ -4,6 +4,19 @@
 
 Tablero de tareas estilo Kanban: una API construida con ASP.NET Core y un frontend en React. Los equipos tienen tableros, los tableros tienen columnas y tarjetas, y cada cambio se envía en tiempo real a los clientes conectados mediante SignalR.
 
+![Tablero Kanban](docs/screenshots/board.png)
+
+## Capturas
+
+Tomadas con los [datos de demostración](#datos-de-demostración).
+
+| | |
+| --- | --- |
+| ![Inicio](docs/screenshots/dashboard.png) **Inicio**: resumen del día, próximas tareas y actividad reciente. | ![Detalle de tarjeta](docs/screenshots/card-detail.png) **Detalle de tarjeta**: checklist, adjuntos, comentarios con menciones, etiquetas y asignados. |
+| ![Mensajes](docs/screenshots/chat.png) **Mensajes**: chat directo, de grupo y un canal por equipo y por tablero. | ![Calendario](docs/screenshots/calendar.png) **Calendario**: fechas límite y actividad de todos tus tableros. |
+| ![Mis tareas](docs/screenshots/my-tasks.png) **Mis tareas**: tus tarjetas asignadas, agrupadas por fecha. | ![Modo oscuro](docs/screenshots/board-dark.png) **Modo oscuro**: sigue el tema del sistema o se elige a mano. |
+| ![Inicio de sesión](docs/screenshots/login.png) **Inicio de sesión**. | |
+
 ## Funcionalidades
 
 - **Autenticación**: registro e inicio de sesión con tokens de acceso JWT de corta duración y refresh tokens rotativos; cierre de sesión, cambio de contraseña, `GET /me` y cambio del nombre visible. Límite de intentos en el login y el registro.
