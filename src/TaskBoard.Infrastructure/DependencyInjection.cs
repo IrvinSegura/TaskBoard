@@ -98,6 +98,7 @@ public static class DependencyInjection
         services.AddScoped<ILabelRepository, LabelRepository>();
         services.AddScoped<IChecklistItemRepository, ChecklistItemRepository>();
         services.AddScoped<IActivityRepository, ActivityRepository>();
+        services.AddScoped<IFavoriteRepository, FavoriteRepository>();
 
         services.AddScoped<BoardAccessService>();
         services.AddScoped<IBoardAccessService, CachedBoardAccessService>();

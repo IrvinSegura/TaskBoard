@@ -7,6 +7,7 @@ using TaskBoard.Domain.Cards;
 using TaskBoard.Domain.Checklists;
 using TaskBoard.Domain.Comments;
 using TaskBoard.Domain.Common;
+using TaskBoard.Domain.Favorites;
 using TaskBoard.Domain.Labels;
 using TaskBoard.Domain.Notifications;
 using TaskBoard.Domain.Teams;
@@ -50,6 +51,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
     public DbSet<ActivityEntry> Activities => Set<ActivityEntry>();
 
+    public DbSet<Favorite> Favorites => Set<Favorite>();
+
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     IQueryable<User> IReadDbContext.Users => Users.AsNoTracking();
@@ -77,6 +80,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     IQueryable<ChecklistItem> IReadDbContext.ChecklistItems => ChecklistItems.AsNoTracking();
 
     IQueryable<ActivityEntry> IReadDbContext.Activities => Activities.AsNoTracking();
+
+    IQueryable<Favorite> IReadDbContext.Favorites => Favorites.AsNoTracking();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

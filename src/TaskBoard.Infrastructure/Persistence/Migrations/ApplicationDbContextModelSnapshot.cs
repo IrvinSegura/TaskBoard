@@ -396,6 +396,46 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                     b.ToTable("Comments");
                 });
 
+            modelBuilder.Entity("TaskBoard.Domain.Favorites.Favorite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BoardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("TeamId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BoardId");
+
+                    b.HasIndex("TeamId");
+
+                    b.HasIndex("UserId", "BoardId")
+                        .IsUnique()
+                        .HasFilter("\"BoardId\" IS NOT NULL");
+
+                    b.HasIndex("UserId", "TeamId")
+                        .IsUnique()
+                        .HasFilter("\"TeamId\" IS NOT NULL");
+
+                    b.ToTable("Favorites", t =>
+                        {
+                            t.HasCheckConstraint("CK_Favorites_OneTarget", "(\"BoardId\" IS NULL) <> (\"TeamId\" IS NULL)");
+                        });
+                });
+
             modelBuilder.Entity("TaskBoard.Domain.Labels.Label", b =>
                 {
                     b.Property<Guid>("Id")
@@ -767,6 +807,25 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                     b.HasOne("TaskBoard.Domain.Cards.Card", null)
                         .WithMany()
                         .HasForeignKey("CardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Favorites.Favorite", b =>
+                {
+                    b.HasOne("TaskBoard.Domain.Boards.Board", null)
+                        .WithMany()
+                        .HasForeignKey("BoardId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("TaskBoard.Domain.Teams.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("TaskBoard.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

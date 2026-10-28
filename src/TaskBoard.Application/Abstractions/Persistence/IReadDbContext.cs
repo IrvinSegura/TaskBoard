@@ -4,6 +4,7 @@ using TaskBoard.Domain.Boards;
 using TaskBoard.Domain.Cards;
 using TaskBoard.Domain.Checklists;
 using TaskBoard.Domain.Comments;
+using TaskBoard.Domain.Favorites;
 using TaskBoard.Domain.Labels;
 using TaskBoard.Domain.Notifications;
 using TaskBoard.Domain.Teams;
@@ -42,4 +43,6 @@ public interface IReadDbContext
     IQueryable<ChecklistItem> ChecklistItems { get; }
 
     IQueryable<ActivityEntry> Activities { get; }
+
+    IQueryable<Favorite> Favorites { get; }
 }
