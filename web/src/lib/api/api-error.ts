@@ -21,6 +21,14 @@ const friendlyMessages: Record<string, string> = {
   'Boards.AlreadyMember': 'Esa persona ya es miembro del tablero.',
   'Boards.UserNotInTeam': 'La persona tiene que ser miembro del equipo.',
   'Authorization.InsufficientRole': 'Tu rol en el tablero no permite esta acción.',
+  'Chat.NotFound': 'Esta conversación ya no existe o no tienes acceso a ella.',
+  'Chat.UserNotFound': 'No hay ningún usuario con ese email.',
+  'Chat.CannotMessageYourself': 'No puedes iniciar una conversación contigo mismo.',
+  'Chat.TypeNotAllowed': 'Ese tipo de archivo no se puede enviar.',
+  'Chat.ContentMismatch': 'El contenido del archivo no coincide con su extensión.',
+  'Chat.TooManyParticipants': 'Un grupo puede tener como máximo 50 personas.',
+  'Chat.MessageTooLarge': 'Los archivos de un mensaje no pueden pasar de 50 MB en total.',
+  'Chat.NotSender': 'Solo quien envió el mensaje puede cambiarlo.',
 }
 
 const statusMessages: Record<number, string> = {

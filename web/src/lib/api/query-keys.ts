@@ -19,4 +19,10 @@ export const queryKeys = {
   activity: (scope: string, id?: string) => ['activity', scope, id ?? 'me'] as const,
   favorites: () => ['me', 'favorites'] as const,
   calendar: (from: string, to: string) => ['me', 'calendar', { from, to }] as const,
+  /** Everything chat; a reconnect refreshes it all, since pushed messages may have been missed. */
+  allChat: () => ['chat'] as const,
+  conversations: () => ['chat', 'conversations'] as const,
+  conversation: (conversationId: string) => ['chat', 'conversations', conversationId] as const,
+  chatMessages: (conversationId: string) => ['chat', 'messages', conversationId] as const,
+  chatContacts: () => ['chat', 'contacts'] as const,
 }
