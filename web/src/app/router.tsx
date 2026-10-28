@@ -118,6 +118,16 @@ export const router = createBrowserRouter([
                 ],
               },
               {
+                path: 'chat',
+                lazy: async () => ({ Component: (await import('@/features/chat/chat-page')).ChatPage }),
+                children: [
+                  {
+                    path: ':conversationId',
+                    lazy: async () => ({ Component: (await import('@/features/chat/chat-thread')).ChatThreadRoute }),
+                  },
+                ],
+              },
+              {
                 path: 'my-tasks',
                 lazy: async () => ({ Component: (await import('@/features/my-tasks/my-tasks-page')).MyTasksPage }),
               },
