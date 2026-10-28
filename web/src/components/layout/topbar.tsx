@@ -42,22 +42,27 @@ export function Topbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 sm:px-4">
-      <Button variant="ghost" size="icon" className="lg:hidden" onClick={onOpenSidebar} aria-label="Abrir menú">
-        <Menu />
-      </Button>
+    // The two side groups share the leftover width equally, so the search box sits in the middle of the bar.
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 sm:px-4">
+      <div className="flex flex-1 basis-0 items-center">
+        <Button variant="ghost" size="icon" className="lg:hidden" onClick={onOpenSidebar} aria-label="Abrir menú">
+          <Menu />
+        </Button>
+      </div>
 
       <button
         type="button"
         onClick={() => navigate('/search')}
-        className="hidden h-9 w-full max-w-sm cursor-pointer items-center gap-2 rounded-lg border border-line bg-subtle px-3 text-sm text-muted transition-colors hover:border-line-strong hover:text-fg sm:flex"
+        className="hidden h-10 w-full max-w-2xl min-w-0 flex-[2] cursor-pointer items-center gap-2.5 rounded-xl border border-line bg-subtle px-3.5 text-sm text-muted transition-colors hover:border-line-strong hover:text-fg sm:flex"
       >
-        <Search className="size-4" />
-        Buscar…
-        <kbd className="ml-auto rounded border border-line bg-surface px-1.5 font-sans text-[11px] text-faint">Ctrl K</kbd>
+        <Search className="size-4 shrink-0" />
+        <span className="truncate">Buscar tarjetas, tableros y equipos…</span>
+        <kbd className="ml-auto shrink-0 rounded border border-line bg-surface px-1.5 font-sans text-[11px] text-faint">
+          Ctrl K
+        </kbd>
       </button>
 
-      <div className="ml-auto flex items-center gap-1">
+      <div className="flex flex-1 basis-0 items-center justify-end gap-1">
         <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => navigate('/search')} aria-label="Buscar">
           <Search />
         </Button>

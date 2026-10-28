@@ -14,6 +14,7 @@ Tablero de tareas estilo Kanban: una API construida con ASP.NET Core y un fronte
 - **Comentarios y adjuntos**: agregar, editar y borrar comentarios; subir, descargar y borrar archivos (disco local o Azure Blob Storage).
 - **Notificaciones**: avisos cuando te asignan una tarjeta, te mencionan con `@`, comentan en una tarjeta tuya o te agregan a un equipo o tablero; con marca de leído, marcar todas como leídas y eliminarlas.
 - **Actividad**: historial de quién creó, movió, editó, comentó o archivó qué, por tarjeta, tablero, equipo y en general.
+- **Favoritos y calendario**: marcar equipos y tableros con estrella para tenerlos a mano, y un calendario mensual con las fechas límite y la actividad de todos tus tableros.
 - **Tiempo real**: eventos de tablero y notificaciones enviados por SignalR.
 - **Frontend**: aplicación web en React con tableros arrastrables, detalle de tarjetas, comentarios, adjuntos, filtros, notificaciones en vivo y modo claro/oscuro.
 - **Operación**: health checks (`/health`), imagen Docker, migraciones como paso de despliegue y soporte para varias instancias con Redis.
@@ -234,6 +235,12 @@ El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-toke
 | `GET` | `/teams/{teamId}/activity` | Actividad de los tableros del equipo que puedo ver. Paginado. |
 | `GET` | `/boards/{boardId}/activity` | Actividad de un tablero. Paginado. |
 | `GET` | `/cards/{cardId}/activity` | Historial de una tarjeta. Paginado. |
+| `GET` | `/me/calendar?from=&to=` | Tarjetas activas con fecha límite y actividad entre `from` (incluido) y `to` (excluido), de todos los tableros que puedo ver. Rango de hasta 45 días; la actividad trae como mucho 1000 entradas, las más recientes (`activityTruncated` avisa si había más). |
+| `GET` | `/me/favorites` | Mis equipos y tableros favoritos (sin los archivados ni los que ya no puedo ver). |
+| `PUT` | `/me/favorites/boards/{boardId}` | Marcar un tablero como favorito. Idempotente. |
+| `DELETE` | `/me/favorites/boards/{boardId}` | Quitar un tablero de favoritos. Idempotente. |
+| `PUT` | `/me/favorites/teams/{teamId}` | Marcar un equipo como favorito. Idempotente. |
+| `DELETE` | `/me/favorites/teams/{teamId}` | Quitar un equipo de favoritos. Idempotente. |
 | `GET` | `/notifications` | Listar mis notificaciones. |
 | `PATCH` | `/notifications/{notificationId}/read` | Marcar una notificación como leída. |
 | `POST` | `/notifications/read-all` | Marcar todas mis notificaciones como leídas. |
