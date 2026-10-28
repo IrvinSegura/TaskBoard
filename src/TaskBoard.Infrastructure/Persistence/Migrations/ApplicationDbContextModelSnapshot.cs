@@ -322,6 +322,194 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                     b.ToTable("CardLabels");
                 });
 
+            modelBuilder.Entity("TaskBoard.Domain.Chat.ChatAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("SizeInBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
+                    b.ToTable("ChatAttachments");
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Chat.ChatMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEdited")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SenderId");
+
+                    b.HasIndex("ConversationId", "CreatedAt");
+
+                    b.ToTable("ChatMessages");
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Chat.Conversation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BoardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DirectKey")
+                        .HasMaxLength(65)
+                        .HasColumnType("character varying(65)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("TeamId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BoardId")
+                        .IsUnique()
+                        .HasFilter("\"BoardId\" IS NOT NULL");
+
+                    b.HasIndex("DirectKey")
+                        .IsUnique()
+                        .HasFilter("\"DirectKey\" IS NOT NULL");
+
+                    b.HasIndex("TeamId")
+                        .IsUnique()
+                        .HasFilter("\"TeamId\" IS NOT NULL");
+
+                    b.ToTable("Conversations", t =>
+                        {
+                            t.HasCheckConstraint("CK_Conversations_Target", "(\"Kind\" = 'Board') = (\"BoardId\" IS NOT NULL) AND (\"Kind\" = 'Team') = (\"TeamId\" IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Chat.ConversationParticipant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ConversationId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ConversationParticipants");
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Chat.ConversationReadMarker", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("LastReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId");
+
+                    b.HasIndex("UserId", "ConversationId")
+                        .IsUnique();
+
+                    b.ToTable("ConversationReadMarkers");
+                });
+
             modelBuilder.Entity("TaskBoard.Domain.Checklists.ChecklistItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -787,6 +975,73 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TaskBoard.Domain.Chat.ChatAttachment", b =>
+                {
+                    b.HasOne("TaskBoard.Domain.Chat.ChatMessage", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Chat.ChatMessage", b =>
+                {
+                    b.HasOne("TaskBoard.Domain.Chat.Conversation", null)
+                        .WithMany()
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TaskBoard.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Chat.Conversation", b =>
+                {
+                    b.HasOne("TaskBoard.Domain.Boards.Board", null)
+                        .WithMany()
+                        .HasForeignKey("BoardId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("TaskBoard.Domain.Teams.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Chat.ConversationParticipant", b =>
+                {
+                    b.HasOne("TaskBoard.Domain.Chat.Conversation", null)
+                        .WithMany("Participants")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TaskBoard.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Chat.ConversationReadMarker", b =>
+                {
+                    b.HasOne("TaskBoard.Domain.Chat.Conversation", null)
+                        .WithMany()
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TaskBoard.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TaskBoard.Domain.Checklists.ChecklistItem", b =>
                 {
                     b.HasOne("TaskBoard.Domain.Cards.Card", null)
@@ -884,6 +1139,16 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                     b.Navigation("Assignments");
 
                     b.Navigation("Labels");
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Chat.ChatMessage", b =>
+                {
+                    b.Navigation("Attachments");
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Chat.Conversation", b =>
+                {
+                    b.Navigation("Participants");
                 });
 
             modelBuilder.Entity("TaskBoard.Domain.Teams.Team", b =>
