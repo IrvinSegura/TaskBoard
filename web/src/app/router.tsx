@@ -1,8 +1,16 @@
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, type RouteObject } from 'react-router'
 import { AppShell } from '@/components/layout/app-shell'
 import { RedirectIfAuthenticated, RequireAuth } from '@/features/auth/route-guards'
 import { boardView } from '@/features/boards/board-view'
 import { RouteErrorPage } from './route-error-page'
+
+/** The card dialog, opened over the canvas or over the board view it is nested in. */
+function cardDetailRoute(): RouteObject {
+  return {
+    path: 'cards/:cardId',
+    lazy: async () => ({ Component: (await import('@/features/cards/card-detail-route')).CardDetailRoute }),
+  }
+}
 
 // Each page is its own chunk, so the sign-in screen does not download the board (drag and drop) code.
 export const router = createBrowserRouter([
@@ -76,12 +84,7 @@ export const router = createBrowserRouter([
                 path: 'boards/:boardId',
                 lazy: async () => ({ Component: (await import('@/features/boards/board-page')).BoardPage }),
                 children: [
-                  {
-                    path: 'cards/:cardId',
-                    lazy: async () => ({
-                      Component: (await import('@/features/cards/card-detail-route')).CardDetailRoute,
-                    }),
-                  },
+                  cardDetailRoute(),
                   {
                     path: 'archived',
                     lazy: async () => ({
@@ -89,10 +92,12 @@ export const router = createBrowserRouter([
                     }),
                   },
                   // Views that take the place of the canvas, marked so BoardPage knows (see boardView).
+                  // List and calendar open cards over themselves, so closing a card goes back to that view.
                   {
                     path: 'list',
                     handle: boardView,
                     lazy: async () => ({ Component: (await import('@/features/boards/board-list-view')).BoardListView }),
+                    children: [cardDetailRoute()],
                   },
                   {
                     path: 'calendar',
@@ -100,6 +105,7 @@ export const router = createBrowserRouter([
                     lazy: async () => ({
                       Component: (await import('@/features/boards/board-calendar-view')).BoardCalendarView,
                     }),
+                    children: [cardDetailRoute()],
                   },
                   {
                     path: 'activity',

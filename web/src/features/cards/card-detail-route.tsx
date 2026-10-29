@@ -31,7 +31,8 @@ export function CardDetailRoute() {
   const remove = useDeleteCard(board.id)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  const close = () => navigate(`/boards/${board.id}`)
+  // Back to the route the card is open over: the canvas, the list or the calendar.
+  const close = () => navigate('..')
   const canEdit = permissions.canEdit && !card.data?.isArchived
   const column = board.columns.find((c) => c.id === card.data?.columnId)
   const creator = board.members.find((m) => m.userId === card.data?.createdById)
