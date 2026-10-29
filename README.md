@@ -14,8 +14,9 @@ Tomadas con los [datos de demostración](#datos-de-demostración).
 | --- | --- |
 | ![Inicio](docs/screenshots/dashboard.png) **Inicio**: resumen del día, próximas tareas y actividad reciente. | ![Detalle de tarjeta](docs/screenshots/card-detail.png) **Detalle de tarjeta**: checklist, adjuntos, comentarios con menciones, etiquetas y asignados. |
 | ![Mensajes](docs/screenshots/chat.png) **Mensajes**: chat directo, de grupo y un canal por equipo y por tablero. | ![Calendario](docs/screenshots/calendar.png) **Calendario**: fechas límite y actividad de todos tus tableros. |
-| ![Mis tareas](docs/screenshots/my-tasks.png) **Mis tareas**: tus tarjetas asignadas, agrupadas por fecha. | ![Modo oscuro](docs/screenshots/board-dark.png) **Modo oscuro**: sigue el tema del sistema o se elige a mano. |
-| ![Inicio de sesión](docs/screenshots/login.png) **Inicio de sesión**. | |
+| ![Lista del tablero](docs/screenshots/board-list.png) **Lista**: las tarjetas de un tablero en una tabla que se ordena, se filtra y se exporta. | ![Calendario del tablero](docs/screenshots/board-calendar.png) **Calendario del tablero**: las tarjetas de un tablero según su fecha límite. |
+| ![Reportes](docs/screenshots/reports.png) **Reportes**: avance por tablero, prioridades, carga por persona y próximos vencimientos, exportables a PDF y Excel. | ![Mis tareas](docs/screenshots/my-tasks.png) **Mis tareas**: tus tarjetas asignadas, agrupadas por fecha. |
+| ![Modo oscuro](docs/screenshots/board-dark.png) **Modo oscuro**: sigue el tema del sistema o se elige a mano. | ![Inicio de sesión](docs/screenshots/login.png) **Inicio de sesión**. |
 
 ## Funcionalidades
 
@@ -23,14 +24,17 @@ Tomadas con los [datos de demostración](#datos-de-demostración).
 - **Equipos**: crear, renombrar y eliminar equipos (solo el dueño elimina), agregar y quitar miembros, cambiar roles y salir de un equipo.
 - **Tableros**: tableros por equipo con miembros, roles y visibilidad; renombrarlos, archivarlos, restaurarlos y eliminarlos (solo si están archivados). Los tableros archivados son de solo lectura.
 - **Columnas y tarjetas**: crear, renombrar, reordenar y eliminar columnas (con sus tarjetas); crear, editar, mover, archivar, restaurar y eliminar tarjetas archivadas, asignar o desasignar miembros, y buscar o filtrar las tarjetas de un tablero.
+- **Vistas del tablero**: además del tablero Kanban, una **Lista** con todas las tarjetas en una tabla (se ordena por columna, prioridad, fecha límite o avance, y usa los mismos filtros) y un **Calendario** con las tarjetas según su fecha límite y las que no tienen fecha. Las tarjetas se abren encima de la vista, y al cerrarlas vuelves a ella.
 - **Etiquetas y checklists**: etiquetas de colores por tablero que se ponen en las tarjetas y sirven de filtro; una checklist por tarjeta, con su avance en el tablero.
 - **Comentarios y adjuntos**: agregar, editar y borrar comentarios; subir, descargar y borrar archivos (disco local o Azure Blob Storage).
-- **Notificaciones**: avisos cuando te asignan una tarjeta, te mencionan con `@`, comentan en una tarjeta tuya o te agregan a un equipo o tablero; con marca de leído, marcar todas como leídas y eliminarlas.
+- **Notificaciones**: avisos cuando te asignan una tarjeta, te mencionan con `@`, comentan en una tarjeta tuya o te agregan a un equipo o tablero. Llegan al instante a todas tus pestañas abiertas, con un aviso emergente y el contador de la campana actualizado; se pueden marcar como leídas (una o todas) y eliminar.
+- **Reportes**: métricas de todos tus tableros o de un equipo: tarjetas abiertas, completadas (las de la última columna de cada tablero), vencidas y sin asignar; avance por tablero, tarjetas abiertas por prioridad, carga por persona y vencimientos de los próximos 14 días.
+- **Exportar a PDF y Excel**: los reportes, la lista de un tablero (con sus filtros y su orden) y Mis tareas se descargan como PDF (A4 con portada, tarjetas de resumen, tablas con colores y números de página) o como Excel `.xlsx` (hoja de resumen con enlaces, una hoja por tabla con filtros, fechas y porcentajes con formato, totales con fórmulas y listas para imprimir).
 - **Actividad**: historial de quién creó, movió, editó, comentó o archivó qué, por tarjeta, tablero, equipo y en general.
 - **Favoritos y calendario**: marcar equipos y tableros con estrella para tenerlos a mano, y un calendario mensual con las fechas límite y la actividad de todos tus tableros.
-- **Chat**: mensajes directos entre usuarios, grupos y un canal por equipo y por tablero, con enlaces, imágenes, audio (incluidas notas de voz grabadas en el navegador), video y documentos; editar y borrar mensajes, y contador de no leídos.
-- **Tiempo real**: eventos de tablero, notificaciones y chat enviados por SignalR.
-- **Frontend**: aplicación web en React con tableros arrastrables, detalle de tarjetas, comentarios, adjuntos, filtros, notificaciones en vivo y modo claro/oscuro.
+- **Chat**: mensajes directos entre usuarios, grupos y un canal por equipo y por tablero, con enlaces, imágenes, audio (incluidas notas de voz grabadas en el navegador), video y documentos; editar y borrar mensajes, y contador de no leídos. Los mensajes nuevos llegan al instante, con un aviso emergente si no tienes abierta esa conversación.
+- **Tiempo real**: eventos de tablero, notificaciones y chat enviados por SignalR en menos de un segundo.
+- **Frontend**: aplicación web en React con tableros arrastrables, vistas de lista y calendario, detalle de tarjetas, comentarios, adjuntos, filtros, reportes, exportación a PDF y Excel, notificaciones en vivo y modo claro/oscuro.
 - **Operación**: health checks (`/health`), imagen Docker, migraciones como paso de despliegue y soporte para varias instancias con Redis.
 
 ## Stack tecnológico
@@ -47,6 +51,7 @@ Tomadas con los [datos de demostración](#datos-de-demostración).
 | Documentación de la API | OpenAPI + Scalar |
 | Pruebas | xUnit, Shouldly, NSubstitute, Testcontainers, NetArchTest |
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, TanStack Query, React Router, dnd-kit, Radix UI |
+| Exportación | jsPDF y jspdf-autotable (PDF), ExcelJS (`.xlsx`), cargados solo al exportar |
 | Pruebas del frontend | Vitest, Testing Library |
 
 ## Arquitectura
@@ -68,8 +73,9 @@ tests/
 web/
   src/app          Router, proveedores y páginas de error.
   src/components   Sistema de diseño (botones, diálogos, menús...) y layout (sidebar, barra superior).
-  src/features     Un módulo por funcionalidad: auth, account, teams, boards, cards, notifications, dashboard.
-  src/lib          Cliente HTTP con refresh de sesión, conexión de SignalR, tema y utilidades.
+  src/features     Un módulo por funcionalidad: auth, account, teams, boards, cards, labels, chat, notifications,
+                   activity, calendar, favorites, my-tasks, reports, search, dashboard...
+  src/lib          Cliente HTTP con refresh de sesión, conexión de SignalR, exportación a PDF y Excel, tema y utilidades.
 ```
 
 Decisiones de diseño principales:
@@ -139,6 +145,8 @@ Cómo se conecta con la API:
 - **Datos**: TanStack Query guarda en caché las respuestas. Mover tarjetas y columnas se refleja al instante (actualización optimista) y se deshace si la API lo rechaza.
 - **Tiempo real**: una sola conexión de SignalR por pestaña. Al abrir un tablero el cliente llama a `JoinBoard`, y cada evento vuelve a pedir los datos afectados. Si el usuario pierde acceso al tablero, se le saca de él.
 - **Permisos**: la interfaz oculta o desactiva lo que el rol del usuario en el tablero no permite, y los tableros archivados se muestran de solo lectura; la API sigue siendo quien valida.
+- **Reportes**: se calculan en el navegador a partir de los tableros que el usuario puede ver (los mismos datos y caché que el resto de la app), sin un endpoint propio.
+- **Exportación**: cada página arma un documento con sus tablas (`web/src/lib/export`) y el navegador genera el PDF o el `.xlsx`, sin pasar por la API. Las librerías se descargan la primera vez que alguien exporta, así que no pesan en la carga inicial.
 
 ### Datos de demostración
 
