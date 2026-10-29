@@ -1,8 +1,10 @@
 import { CircleCheckBig, ListChecks } from 'lucide-react'
 import { PageContainer, PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
+import { ExportMenu } from '@/components/ui/export-menu'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback'
 import { cn } from '@/lib/utils/cn'
+import { myTasksDocument } from './my-tasks-export'
 import { MyTaskRow } from './my-task-row'
 import { dueGroup, dueGroupLabels, useMyCards, type DueGroup, type MyCard } from './my-tasks-api'
 
@@ -27,7 +29,16 @@ export function MyTasksPage() {
 
   return (
     <PageContainer className="max-w-4xl">
-      <PageHeader title="Mis tareas" description="Las tarjetas que tienes asignadas en todos tus tableros." />
+      <PageHeader
+        title="Mis tareas"
+        description="Las tarjetas que tienes asignadas en todos tus tableros."
+        actions={
+          <ExportMenu
+            disabled={!cards.data?.length}
+            getDocument={() => myTasksDocument(order.flatMap((group) => groups.get(group) ?? []))}
+          />
+        }
+      />
 
       <div className="mt-8 space-y-6">
         {cards.isPending ? (

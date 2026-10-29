@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { PageContainer, PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
+import { Segmented } from '@/components/ui/segmented'
 import { boardCover } from '@/features/boards/board-cover'
 import { cn } from '@/lib/utils/cn'
 import { dueStatus } from '@/lib/utils/format'
@@ -245,34 +246,6 @@ function Legend({ showActivity }: { showActivity: boolean }) {
           Actividad del día
         </span>
       )}
-    </div>
-  )
-}
-
-interface SegmentedProps<T extends string> {
-  value: T
-  onChange: (value: T) => void
-  options: { value: T; label: string }[]
-  label: string
-}
-
-function Segmented<T extends string>({ value, onChange, options, label }: SegmentedProps<T>) {
-  return (
-    <div role="group" aria-label={label} className="inline-flex rounded-lg border border-line bg-subtle p-0.5">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          aria-pressed={value === option.value}
-          onClick={() => onChange(option.value)}
-          className={cn(
-            'cursor-pointer rounded-md px-2.5 py-1 text-[13px] font-medium transition-colors',
-            value === option.value ? 'bg-surface text-fg shadow-card' : 'text-muted hover:text-fg',
-          )}
-        >
-          {option.label}
-        </button>
-      ))}
     </div>
   )
 }
