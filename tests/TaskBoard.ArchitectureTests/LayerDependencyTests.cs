@@ -38,7 +38,7 @@ public class LayerDependencyTests
     {
         var result = Types.InAssembly(ApplicationAssembly)
             .ShouldNot()
-            .HaveDependencyOnAny(InfrastructureNamespace, ApiNamespace, "Npgsql", "Microsoft.AspNetCore")
+            .HaveDependencyOnAny(InfrastructureNamespace, ApiNamespace, "Npgsql", "Microsoft.AspNetCore", "MailKit", "MimeKit")
             .GetResult();
 
         result.IsSuccessful.ShouldBeTrue(FailingTypes(result));
