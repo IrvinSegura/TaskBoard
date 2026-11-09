@@ -238,6 +238,9 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("DueDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("DueReminderSentFor")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsArchived")
                         .HasColumnType("boolean");
 
@@ -748,6 +751,49 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                     b.ToTable("TeamMembers");
                 });
 
+            modelBuilder.Entity("TaskBoard.Domain.Users.PasswordResetToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetTokens");
+                });
+
             modelBuilder.Entity("TaskBoard.Domain.Users.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -808,6 +854,13 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset?>("EmailVerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.PrimitiveCollection<int[]>("MutedEmailNotifications")
+                        .IsRequired()
+                        .HasColumnType("integer[]");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -1111,6 +1164,15 @@ namespace TaskBoard.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TaskBoard.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TaskBoard.Domain.Users.PasswordResetToken", b =>
+                {
                     b.HasOne("TaskBoard.Domain.Users.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
