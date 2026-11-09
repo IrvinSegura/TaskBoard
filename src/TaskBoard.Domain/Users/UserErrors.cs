@@ -17,6 +17,13 @@ public static class UserErrors
     public static readonly Error WrongPassword =
         Error.Validation("Users.WrongPassword", "The current password is incorrect.");
 
+    // Validation rather than Unauthorized: nobody is signed in here, and the client must not try to refresh a session.
+    public static readonly Error InvalidPasswordResetToken =
+        Error.Validation("Users.InvalidPasswordResetToken", "The password reset link is invalid, expired or already used.");
+
+    public static readonly Error InvalidEmailVerificationToken =
+        Error.Validation("Users.InvalidEmailVerificationToken", "The email confirmation link is invalid or expired.");
+
     public static readonly Error NotFoundByEmail =
         Error.NotFound("Users.NotFoundByEmail", "No user is registered with that email.");
 

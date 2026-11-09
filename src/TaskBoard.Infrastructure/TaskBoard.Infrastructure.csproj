@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="MailKit" />
     <!-- Pinned so Npgsql's older transitive version does not conflict with EF Core Design. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />

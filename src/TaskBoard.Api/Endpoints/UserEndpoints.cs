@@ -1,9 +1,12 @@
 using TaskBoard.Api.Authentication;
 using TaskBoard.Api.Extensions;
+using TaskBoard.Api.RateLimiting;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Features.Auth.ChangePassword;
 using TaskBoard.Application.Features.Cards.GetMyCards;
+using TaskBoard.Application.Features.Users.EmailPreferences;
 using TaskBoard.Application.Features.Users.GetCurrentUser;
+using TaskBoard.Application.Features.Users.SendVerificationEmail;
 using TaskBoard.Application.Features.Users.UpdateProfile;
 
 namespace TaskBoard.Api.Endpoints;
@@ -38,6 +41,33 @@ internal sealed class UserEndpoints : IEndpoint
             var result = await handler.Handle(command, cancellationToken);
             return result.ToHttpResult();
         });
+
+        group.MapGet("/email-preferences", async (
+            IQueryHandler<GetEmailPreferencesQuery, EmailPreferencesResponse> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new GetEmailPreferencesQuery(), cancellationToken);
+            return result.ToHttpResult();
+        });
+
+        group.MapPut("/email-preferences", async (
+            UpdateEmailPreferencesCommand command,
+            ICommandHandler<UpdateEmailPreferencesCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(command, cancellationToken);
+            return result.ToHttpResult();
+        });
+
+        // Rate limited for the email it sends.
+        group.MapPost("/verification-email", async (
+            ICommandHandler<SendVerificationEmailCommand> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(new SendVerificationEmailCommand(), cancellationToken);
+            return result.ToHttpResult();
+        })
+        .RequireRateLimiting(AuthRateLimitOptions.PolicyName);
 
         group.MapPost("/password", async (
             ChangePasswordCommand command,

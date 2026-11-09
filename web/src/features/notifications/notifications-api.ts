@@ -1,6 +1,15 @@
 import { api } from '@/lib/api/client'
 
-export type NotificationType = 'CardAssigned' | 'CommentAdded' | 'AddedToBoard' | 'AddedToTeam' | 'Mentioned'
+export type NotificationType =
+  | 'CardAssigned'
+  | 'CommentAdded'
+  | 'AddedToBoard'
+  | 'AddedToTeam'
+  | 'Mentioned'
+  | 'RemovedFromBoard'
+  | 'RemovedFromTeam'
+  | 'TeamRoleChanged'
+  | 'CardDueSoon'
 
 export interface AppNotification {
   id: string

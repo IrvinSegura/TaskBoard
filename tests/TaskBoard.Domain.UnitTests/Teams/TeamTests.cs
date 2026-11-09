@@ -21,6 +21,46 @@ public class TeamTests
     }
 
     [Fact]
+    public void RemoveMember_ByAnAdmin_SaysWhoRemovedThem()
+    {
+        var ownerId = Guid.NewGuid();
+        var memberId = Guid.NewGuid();
+        var team = Team.Create("Platform", ownerId);
+        team.AddMember(ownerId, memberId, TeamRole.Member);
+
+        team.RemoveMember(ownerId, memberId);
+
+        team.DomainEvents.OfType<TeamMemberRemovedEvent>().ShouldHaveSingleItem().RemovedById.ShouldBe(ownerId);
+    }
+
+    [Fact]
+    public void ChangeMemberRole_RaisesTheNewRoleAndWhoChangedIt()
+    {
+        var ownerId = Guid.NewGuid();
+        var memberId = Guid.NewGuid();
+        var team = Team.Create("Platform", ownerId);
+        team.AddMember(ownerId, memberId, TeamRole.Member);
+
+        team.ChangeMemberRole(ownerId, memberId, TeamRole.Admin).IsSuccess.ShouldBeTrue();
+
+        team.DomainEvents.OfType<TeamMemberRoleChangedEvent>().ShouldHaveSingleItem()
+            .ShouldBe(new TeamMemberRoleChangedEvent(team.Id, memberId, TeamRole.Admin, ownerId));
+    }
+
+    [Fact]
+    public void ChangeMemberRole_ToTheSameRole_RaisesNothing()
+    {
+        var ownerId = Guid.NewGuid();
+        var memberId = Guid.NewGuid();
+        var team = Team.Create("Platform", ownerId);
+        team.AddMember(ownerId, memberId, TeamRole.Member);
+
+        team.ChangeMemberRole(ownerId, memberId, TeamRole.Member).IsSuccess.ShouldBeTrue();
+
+        team.DomainEvents.OfType<TeamMemberRoleChangedEvent>().ShouldBeEmpty();
+    }
+
+    [Fact]
     public void RemoveMember_MemberRemovesSomeoneElse_ReturnsNotAllowed()
     {
         var ownerId = Guid.NewGuid();

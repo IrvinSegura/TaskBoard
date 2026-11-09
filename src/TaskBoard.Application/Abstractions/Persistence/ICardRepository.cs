@@ -15,6 +15,10 @@ public interface ICardRepository
     // Every card of the column, archived ones included, ordered by position. Used to renumber the column.
     Task<IReadOnlyList<Card>> GetColumnCardsAsync(Guid columnId, CancellationToken cancellationToken);
 
+    // Unarchived cards on unarchived boards, with assignees, due after now and by until, whose current due
+    // date has had no reminder yet. Assignments included.
+    Task<IReadOnlyList<Card>> GetDueForReminderAsync(DateTimeOffset now, DateTimeOffset until, CancellationToken cancellationToken);
+
     void Add(Card card);
 
     // The database deletes the card's comments and attachments with it.

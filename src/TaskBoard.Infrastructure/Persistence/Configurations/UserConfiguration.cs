@@ -14,5 +14,8 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.PasswordHash).HasMaxLength(500).IsRequired();
 
         builder.HasIndex(u => u.Email).IsUnique();
+
+        // An integer[] column, empty for everyone until they mute something.
+        builder.PrimitiveCollection(u => u.MutedEmailNotifications).IsRequired();
     }
 }

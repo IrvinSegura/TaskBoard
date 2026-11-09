@@ -6,6 +6,7 @@ export interface CurrentUser {
   email: string
   displayName: string
   createdAt: string
+  emailVerified: boolean
 }
 
 export interface RegisterRequest {
@@ -27,4 +28,9 @@ export const authApi = {
   me: () => api.get<CurrentUser>('/me'),
   updateProfile: (displayName: string) => api.patch('/me', { displayName }),
   changePassword: (request: ChangePasswordRequest) => api.post('/me/password', request),
+  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }, { auth: false }),
+  resetPassword: (token: string, newPassword: string) =>
+    api.post('/auth/reset-password', { token, newPassword }, { auth: false }),
+  verifyEmail: (token: string) => api.post('/auth/verify-email', { token }, { auth: false }),
+  sendVerificationEmail: () => api.post('/me/verification-email'),
 }

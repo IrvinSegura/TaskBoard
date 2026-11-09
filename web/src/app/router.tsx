@@ -28,7 +28,20 @@ export const router = createBrowserRouter([
             path: '/register',
             lazy: async () => ({ Component: (await import('@/features/auth/register-page')).RegisterPage }),
           },
+          {
+            path: '/forgot-password',
+            lazy: async () => ({ Component: (await import('@/features/auth/forgot-password-page')).ForgotPasswordPage }),
+          },
         ],
+      },
+      // Outside the guard: the link must work even in a browser that is signed in, maybe to another account.
+      {
+        path: '/reset-password',
+        lazy: async () => ({ Component: (await import('@/features/auth/reset-password-page')).ResetPasswordPage }),
+      },
+      {
+        path: '/verify-email',
+        lazy: async () => ({ Component: (await import('@/features/auth/verify-email-page')).VerifyEmailPage }),
       },
       {
         element: <RequireAuth />,

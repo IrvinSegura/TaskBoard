@@ -7,16 +7,19 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using StackExchange.Redis;
 using TaskBoard.Application.Abstractions.Authentication;
 using TaskBoard.Application.Abstractions.Authorization;
+using TaskBoard.Application.Abstractions.Email;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Abstractions.Persistence;
 using TaskBoard.Application.Abstractions.Storage;
 using TaskBoard.Infrastructure.Authentication;
 using TaskBoard.Infrastructure.Authorization;
+using TaskBoard.Infrastructure.Email;
 using TaskBoard.Infrastructure.HealthChecks;
 using TaskBoard.Infrastructure.Persistence;
 using TaskBoard.Infrastructure.Persistence.Interceptors;
 using TaskBoard.Infrastructure.Persistence.Outbox;
 using TaskBoard.Infrastructure.Persistence.Repositories;
+using TaskBoard.Infrastructure.Reminders;
 using TaskBoard.Infrastructure.Storage;
 
 namespace TaskBoard.Infrastructure;
@@ -36,7 +39,8 @@ public static class DependencyInjection
             .AddRedis(configuration)
             .AddPersistence(configuration)
             .AddAuthenticationServices(configuration)
-            .AddFileStorage(configuration);
+            .AddFileStorage(configuration)
+            .AddEmail(configuration);
     }
 
     // Empty when the API runs as a single instance; Redis is needed as soon as there are several.
@@ -89,6 +93,7 @@ public static class DependencyInjection
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<IBoardRepository, BoardRepository>();
         services.AddScoped<ICardRepository, CardRepository>();
@@ -135,7 +140,10 @@ public static class DependencyInjection
 
         services.AddSingleton<ITokenProvider, JwtTokenProvider>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.Configure<PasswordResetOptions>(configuration.GetSection(PasswordResetOptions.SectionName));
+        services.AddSingleton<IPasswordResetTokenProvider, PasswordResetTokenProvider>();
         services.AddHostedService<ExpiredRefreshTokenCleanupService>();
+        services.AddSingleton<IEmailVerificationTokens, EmailVerificationTokens>();
 
         return services;
     }
@@ -164,4 +172,44 @@ public static class DependencyInjection
 
         return services;
     }
+
+    private static IServiceCollection AddEmail(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<EmailOptions>()
+            .Bind(configuration.GetSection(EmailOptions.SectionName))
+            .Validate(
+                options => !options.Enabled || IsWebAddress(options.WebAppUrl),
+                "Email:WebAppUrl must be the http(s) address of the web app when Email:Enabled is true.")
+            .Validate(
+                options => !options.Enabled || !string.IsNullOrWhiteSpace(options.Smtp.Host),
+                "Email:Smtp:Host is required when Email:Enabled is true.")
+            .Validate(
+                options => !options.Enabled || !string.IsNullOrWhiteSpace(options.FromAddress),
+                "Email:FromAddress is required when Email:Enabled is true.")
+            .ValidateOnStart();
+
+        services.AddSingleton<IWebAppLinks, WebAppLinks>();
+
+        services.AddSingleton<QueuedEmailSender>();
+        services.AddSingleton<IEmailSender>(provider => provider.GetRequiredService<QueuedEmailSender>());
+        services.AddHostedService<EmailDeliveryService>();
+
+        services.Configure<DueReminderOptions>(configuration.GetSection(DueReminderOptions.SectionName));
+        services.AddHostedService<CardDueReminderService>();
+
+        var enabled = configuration.GetValue<bool>($"{EmailOptions.SectionName}:{nameof(EmailOptions.Enabled)}");
+        if (enabled)
+        {
+            services.AddSingleton<IEmailTransport, SmtpEmailTransport>();
+        }
+        else
+        {
+            services.AddSingleton<IEmailTransport, LoggingEmailTransport>();
+        }
+
+        return services;
+    }
+
+    private static bool IsWebAddress(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 }

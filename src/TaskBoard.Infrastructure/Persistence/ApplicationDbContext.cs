@@ -24,6 +24,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+
     public DbSet<Team> Teams => Set<Team>();
 
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();

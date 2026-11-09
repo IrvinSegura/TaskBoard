@@ -93,7 +93,14 @@ public sealed class Team : AggregateRoot
             return TeamErrors.CannotAssignOwner;
         }
 
+        // Setting the role a member already has changes nothing, so it tells no one.
+        if (member.Role == role)
+        {
+            return Result.Success();
+        }
+
         member.ChangeRole(role);
+        Raise(new TeamMemberRoleChangedEvent(Id, userId, role, actorId));
         return Result.Success();
     }
 
@@ -117,7 +124,7 @@ public sealed class Team : AggregateRoot
         }
 
         _members.Remove(member);
-        Raise(new TeamMemberRemovedEvent(Id, userId));
+        Raise(new TeamMemberRemovedEvent(Id, userId, actorId));
         return Result.Success();
     }
 }

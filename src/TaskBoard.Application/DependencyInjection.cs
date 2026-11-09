@@ -3,7 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Behaviors;
 using TaskBoard.Application.Features.Auth;
+using TaskBoard.Application.Features.Cards.DueReminders;
 using TaskBoard.Application.Features.Chat;
+using TaskBoard.Application.Features.Emails;
 using TaskBoard.Application.Features.Notifications;
 
 namespace TaskBoard.Application;
@@ -41,8 +43,12 @@ public static class DependencyInjection
 
         services.AddScoped<BoardAuthorizer>();
         services.AddScoped<NotificationPublisher>();
+        services.AddScoped<NotificationEmailer>();
+        services.AddSingleton<NotificationEmails>();
+        services.AddSingleton<AccountEmails>();
         services.AddScoped<AuthTokenService>();
         services.AddScoped<ChatAccess>();
+        services.AddScoped<ICardDueReminders, CardDueReminders>();
 
         return services;
     }

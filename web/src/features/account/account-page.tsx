@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils/cn'
 import { formatLongDate } from '@/lib/utils/format'
 import { useTheme, type ThemePreference } from '@/lib/theme/theme-provider'
 import { ChangePasswordForm } from './change-password-form'
+import { EmailPreferences } from './email-preferences'
+import { EmailVerificationNotice } from './email-verification-notice'
 import { ProfileForm } from './profile-form'
 
 const themes: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
@@ -21,9 +23,11 @@ export function AccountPage() {
 
   return (
     <PageContainer className="max-w-3xl">
-      <PageHeader title="Mi cuenta" description="Tu perfil, la apariencia de la aplicación y tu contraseña." />
+      <PageHeader title="Mi cuenta" description="Tu perfil, la apariencia de la aplicación, tus correos y tu contraseña." />
 
       <div className="mt-8 space-y-6">
+        <EmailVerificationNotice />
+
         <Card>
           <div className="flex items-center gap-4 px-5 py-5">
             <Avatar id={user.id} name={user.displayName} size="xl" />
@@ -73,6 +77,20 @@ export function AccountPage() {
                 {label}
               </button>
             ))}
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Correos</CardTitle>
+              <CardDescription>
+                Elige qué avisos recibes también en {user.email}. En la aplicación los sigues viendo todos.
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <div className="p-5">
+            <EmailPreferences />
           </div>
         </Card>
 

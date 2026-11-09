@@ -6,5 +6,9 @@ public enum NotificationType
     CommentAdded = 1,
     AddedToBoard = 2,
     AddedToTeam = 3,
-    Mentioned = 4
+    Mentioned = 4,
+    RemovedFromBoard = 5,
+    RemovedFromTeam = 6,
+    TeamRoleChanged = 7,
+    CardDueSoon = 8
 }
