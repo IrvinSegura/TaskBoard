@@ -162,6 +162,20 @@ export const faqs: Faq[] = [
       'En Mi cuenta (menú de tu avatar). Al cambiar la contraseña se cierran tus sesiones en los demás dispositivos.',
   },
   {
+    id: 'forgot-password',
+    topic: 'Cuenta',
+    question: '¿Qué hago si olvidé mi contraseña?',
+    answer:
+      'En la pantalla de inicio de sesión, entra en «¿La olvidaste?» y escribe tu email. Te enviamos un enlace que vence en poco tiempo y solo funciona una vez; al usarlo se cierran todas tus sesiones.',
+  },
+  {
+    id: 'email-notices',
+    topic: 'Cuenta',
+    question: '¿Puedo dejar de recibir avisos por correo?',
+    answer:
+      'Sí. En Mi cuenta, en la sección Correos, hay un interruptor por cada aviso. Los avisos de la aplicación no cambian, y los correos de seguridad de tu cuenta siempre se envían.',
+  },
+  {
     id: 'theme',
     topic: 'Cuenta',
     question: '¿Puedo usar el tema oscuro?',
