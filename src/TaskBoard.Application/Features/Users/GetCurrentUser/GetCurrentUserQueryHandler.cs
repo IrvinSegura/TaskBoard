@@ -15,7 +15,7 @@ internal sealed class GetCurrentUserQueryHandler(IReadDbContext db, ICurrentUser
         var userId = currentUser.UserId;
         var user = await db.Users
             .Where(u => u.Id == userId)
-            .Select(u => new CurrentUserResponse(u.Id, u.Email, u.DisplayName, u.CreatedAt))
+            .Select(u => new CurrentUserResponse(u.Id, u.Email, u.DisplayName, u.CreatedAt, u.EmailVerifiedAt != null))
             .SingleOrDefaultAsync(cancellationToken);
 
         // An access token can outlive the account it was issued for.
