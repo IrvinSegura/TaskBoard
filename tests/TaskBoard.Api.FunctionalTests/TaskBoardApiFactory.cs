@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using TaskBoard.Application.Abstractions.Email;
 using TaskBoard.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
@@ -20,6 +22,9 @@ public sealed class TaskBoardApiFactory : WebApplicationFactory<Program>, IAsync
     // Uploaded files go to a throwaway folder instead of the API project's storage folder.
     private readonly string _storagePath = Path.Combine(Path.GetTempPath(), "taskboard-tests", Guid.NewGuid().ToString("N"));
 
+    // What the API would have sent, for tests to read.
+    public RecordingEmailSender Emails { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // "Testing" skips the development-only migration step in Program.cs; InitializeAsync migrates instead.
@@ -31,6 +36,16 @@ public sealed class TaskBoardApiFactory : WebApplicationFactory<Program>, IAsync
 
         // Every test signs up its own users from the same address; the rate limit has its own test.
         builder.UseSetting("RateLimiting:Auth:PermitLimit", "100000");
+
+        builder.UseSetting("Email:WebAppUrl", "https://taskboard.test");
+
+        // Tests send the reminders themselves, so a timer never sends one in the middle of another test.
+        builder.UseSetting("DueReminders:Interval", "00:00:00");
+        builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender>(Emails);
+        });
     }
 
     public async Task InitializeAsync()
