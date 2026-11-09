@@ -6,6 +6,16 @@ Tablero de tareas estilo Kanban: una API construida con ASP.NET Core y un fronte
 
 ![Tablero Kanban](docs/screenshots/board.png)
 
+## Lo más destacado
+
+- **Colaboración en tiempo real**: lo que alguien mueve, edita o comenta aparece en las pestañas de los demás en menos de un segundo, también con varias instancias de la API detrás de Redis.
+- **Tres vistas por tablero**: Kanban con arrastrar y soltar (también con teclado), lista ordenable y filtrable, y calendario por fecha límite.
+- **Chat integrado**: mensajes directos, grupos y un canal automático por equipo y por tablero, con archivos, imágenes, video y notas de voz grabadas en el navegador.
+- **Notificaciones en la app y por correo**: asignaciones, menciones con `@`, comentarios, cambios de membresía y recordatorios de vencimiento, con un interruptor por tipo para el correo.
+- **Reportes y exportación**: métricas de avance, prioridades y carga por persona, exportables a PDF y Excel con formato listo para imprimir.
+- **Seguridad cuidada**: refresh tokens rotativos con detección de reutilización, cookie `HttpOnly`, límite de intentos, verificación del contenido real de cada archivo subido y autorización por tablero en cada petición. Ver [Seguridad](#seguridad).
+- **Arquitectura limpia y probada**: Clean Architecture con CQRS, outbox transaccional, cerca de 350 pruebas en .NET (unitarias, de integración con PostgreSQL real, funcionales y de arquitectura) y casi 100 en el frontend.
+
 ## Capturas
 
 Tomadas con los [datos de demostración](#datos-de-demostración).
@@ -21,9 +31,12 @@ Tomadas con los [datos de demostración](#datos-de-demostración).
 ## Funcionalidades
 
 - **Autenticación**: registro e inicio de sesión con tokens de acceso JWT de corta duración y refresh tokens rotativos; cierre de sesión, cambio y recuperación de contraseña por correo, `GET /me` y cambio del nombre visible. Límite de intentos en el login, el registro y la recuperación.
-- **Equipos**: crear, renombrar y eliminar equipos (solo el dueño elimina), agregar y quitar miembros, cambiar roles y salir de un equipo.
-- **Tableros**: tableros por equipo con miembros, roles y visibilidad; renombrarlos, archivarlos, restaurarlos y eliminarlos (solo si están archivados). Los tableros archivados son de solo lectura.
-- **Columnas y tarjetas**: crear, renombrar, reordenar y eliminar columnas (con sus tarjetas); crear, editar, mover, archivar, restaurar y eliminar tarjetas archivadas, asignar o desasignar miembros, y buscar o filtrar las tarjetas de un tablero.
+- **Recuperar la contraseña y confirmar el correo**: páginas para pedir el enlace («¿La olvidaste?» en el login), elegir una contraseña nueva y confirmar el correo desde el enlace de bienvenida. Mi cuenta avisa si el correo sigue sin confirmar y permite pedir otro enlace.
+- **Equipos**: crear, renombrar y eliminar equipos (solo el dueño elimina), agregar miembros por su email, quitarlos, cambiar roles y salir de un equipo. Cada equipo tiene una portada, y pestañas de tableros, archivados, miembros, actividad y configuración.
+- **Roles**: en un equipo, dueño, admin o miembro; en un tablero, admin, editor o lector. La interfaz solo muestra lo que tu rol permite y la API lo vuelve a validar.
+- **Tableros**: tableros por equipo, privados (solo los ven sus miembros) o de equipo (cualquier miembro del equipo los ve como lector); renombrarlos, compartirlos con miembros del equipo, archivarlos, restaurarlos y eliminarlos (solo si están archivados). Los tableros archivados son de solo lectura.
+- **Columnas y tarjetas**: crear, renombrar, reordenar y eliminar columnas (con sus tarjetas); crear tarjetas en serie (Enter crea una y deja listo el campo para la siguiente), editarlas, moverlas, archivarlas, restaurarlas y eliminar las archivadas, asignar o desasignar miembros, y buscar o filtrar las tarjetas de un tablero. Cada tarjeta tiene prioridad (ninguna, baja, media, alta o urgente) y fecha límite, que se marca en ámbar cuando faltan menos de 48 horas y en rojo cuando venció.
+- **Teclado y accesibilidad**: las tarjetas se mueven también con el teclado (Tab para enfocarla, Espacio para tomarla, flechas para moverla y Espacio para soltarla) y se abren con Enter. Ver los [atajos de teclado](#atajos-de-teclado).
 - **Vistas del tablero**: además del tablero Kanban, una **Lista** con todas las tarjetas en una tabla (se ordena por columna, prioridad, fecha límite o avance, y usa los mismos filtros) y un **Calendario** con las tarjetas según su fecha límite y las que no tienen fecha. Las tarjetas se abren encima de la vista, y al cerrarlas vuelves a ella.
 - **Etiquetas y checklists**: etiquetas de colores por tablero que se ponen en las tarjetas y sirven de filtro; una checklist por tarjeta, con su avance en el tablero.
 - **Comentarios y adjuntos**: agregar, editar y borrar comentarios; subir, descargar y borrar archivos (disco local o Azure Blob Storage).
@@ -32,8 +45,11 @@ Tomadas con los [datos de demostración](#datos-de-demostración).
 - **Reportes**: métricas de todos tus tableros o de un equipo: tarjetas abiertas, completadas (las de la última columna de cada tablero), vencidas y sin asignar; avance por tablero, tarjetas abiertas por prioridad, carga por persona y vencimientos de los próximos 14 días.
 - **Exportar a PDF y Excel**: los reportes, la lista de un tablero (con sus filtros y su orden) y Mis tareas se descargan como PDF (A4 con portada, tarjetas de resumen, tablas con colores y números de página) o como Excel `.xlsx` (hoja de resumen con enlaces, una hoja por tabla con filtros, fechas y porcentajes con formato, totales con fórmulas y listas para imprimir).
 - **Actividad**: historial de quién creó, movió, editó, comentó o archivó qué, por tarjeta, tablero, equipo y en general.
-- **Favoritos y calendario**: marcar equipos y tableros con estrella para tenerlos a mano, y un calendario mensual con las fechas límite y la actividad de todos tus tableros.
-- **Chat**: mensajes directos entre usuarios, grupos y un canal por equipo y por tablero, con enlaces, imágenes, audio (incluidas notas de voz grabadas en el navegador), video y documentos; editar y borrar mensajes, y contador de no leídos. Los mensajes nuevos llegan al instante, con un aviso emergente si no tienes abierta esa conversación.
+- **Inicio**: saludo con el resumen del día (tareas asignadas, vencidas y de esta semana), tus próximas tareas, tus tableros y la actividad reciente.
+- **Mis tareas**: tus tarjetas asignadas de todos los tableros, agrupadas en vencidas, hoy, próximos 7 días, más adelante y sin fecha.
+- **Favoritos y calendario**: marcar equipos y tableros con estrella para tenerlos a mano (son solo tuyos y se conservan si te quitan de un equipo y te vuelven a agregar), y un calendario mensual con las fechas límite y la actividad de todos tus tableros, que se filtra a solo tus tarjetas, oculta la actividad si quieres y muestra el detalle de cada día.
+- **Ayuda**: guía de primeros pasos, tabla de atajos de teclado y preguntas frecuentes con un buscador que ignora mayúsculas y acentos.
+- **Chat**: mensajes directos entre usuarios, grupos (de hasta 50 personas, con nombre y participantes editables) y un canal que se crea solo con cada equipo y cada tablero, con enlaces detectados automáticamente, imágenes, audio (incluidas notas de voz grabadas en el navegador), video y documentos; editar y borrar mensajes, y contador de no leídos en el menú lateral. Los mensajes nuevos llegan al instante, con un aviso emergente si no tienes abierta esa conversación.
 - **Tiempo real**: eventos de tablero, notificaciones y chat enviados por SignalR en menos de un segundo.
 - **Frontend**: aplicación web en React con tableros arrastrables, vistas de lista y calendario, detalle de tarjetas, comentarios, adjuntos, filtros, reportes, exportación a PDF y Excel, notificaciones en vivo y modo claro/oscuro.
 - **Operación**: health checks (`/health`), imagen Docker, migraciones como paso de despliegue y soporte para varias instancias con Redis.
@@ -88,6 +104,16 @@ Decisiones de diseño principales:
 - **Outbox transaccional**: los eventos de dominio se guardan como mensajes de outbox en la misma transacción y un proceso en segundo plano los despacha, enviando luego notificaciones y mensajes de SignalR. Cada instancia reserva un lote con `FOR UPDATE SKIP LOCKED` y un plazo (`LockedUntil`), así que con varias instancias cada mensaje se procesa una sola vez; si una instancia muere, otra retoma su lote cuando vence el plazo.
 - **Autorización por tablero**: las peticiones que tocan un tablero se validan contra el rol del usuario en ese tablero antes de ejecutar el handler. Los tableros archivados rechazan cualquier escritura. Los roles se guardan en caché 30 segundos y se invalidan en cuanto cambian los miembros del tablero o del equipo.
 - **Posiciones fraccionarias**: mover una tarjeta o columna solo cambia su propia posición. Cuando el hueco entre dos vecinas se vuelve demasiado pequeño, la columna (o el tablero) se renumera conservando el orden.
+- **Correos en segundo plano**: los handlers solo encolan el correo; un servicio en segundo plano lo envía por SMTP con hasta 3 intentos, así que un servidor de correo lento o caído no frena ninguna petición. Cada correo tiene versión HTML y de texto con un diseño común.
+
+## Seguridad
+
+- **Contraseñas**: se guardan con el hasher de ASP.NET Core Identity (PBKDF2 con sal y versionado).
+- **Sesiones**: tokens de acceso JWT de 15 minutos que solo viven en memoria, y refresh tokens rotativos en una cookie `HttpOnly`, `Secure` y `SameSite=Strict`. Reutilizar un refresh token ya cambiado se trata como robo y cierra todas las sesiones del usuario; cambiar o restablecer la contraseña también las cierra.
+- **Enlaces por correo**: el de recuperar la contraseña es de un solo uso y vence en una hora; el de confirmar el correo está firmado y vence a los 7 días. Pedir la recuperación responde igual exista o no la cuenta, para no revelar qué correos están registrados.
+- **Límite de intentos**: por IP en el login, el registro, la recuperación y la confirmación del correo, tomando la IP real solo de los proxies declarados como de confianza.
+- **Archivos**: además de la extensión y el tamaño, se revisan los primeros bytes de cada adjunto y archivo del chat contra la firma de su formato, así que un ejecutable renombrado no pasa por imagen, PDF o audio. Los archivos que se subieron sin llegar a guardarse se borran solos.
+- **Autorización**: cada petición que toca un tablero se valida contra el rol del usuario en él, y quien pierde acceso sale al instante del tablero y de sus eventos en tiempo real, en todas las instancias.
 
 ## Cómo empezar
 
@@ -148,6 +174,19 @@ Cómo se conecta con la API:
 - **Permisos**: la interfaz oculta o desactiva lo que el rol del usuario en el tablero no permite, y los tableros archivados se muestran de solo lectura; la API sigue siendo quien valida.
 - **Reportes**: se calculan en el navegador a partir de los tableros que el usuario puede ver (los mismos datos y caché que el resto de la app), sin un endpoint propio.
 - **Exportación**: cada página arma un documento con sus tablas (`web/src/lib/export`) y el navegador genera el PDF o el `.xlsx`, sin pasar por la API. Las librerías se descargan la primera vez que alguien exporta, así que no pesan en la carga inicial.
+
+### Atajos de teclado
+
+| Teclas | Acción | Dónde |
+| --- | --- | --- |
+| `Enter` | Crear la tarjeta y seguir escribiendo la siguiente | Al añadir una tarjeta |
+| `Shift` + `Enter` | Salto de línea en el título | Al añadir una tarjeta |
+| `Enter` | Abrir la tarjeta enfocada | En el tablero |
+| `Espacio`, flechas | Tomar la tarjeta enfocada, moverla y soltarla | En el tablero |
+| `Ctrl` + `Enter` | Guardar la descripción o publicar el comentario | En el detalle de una tarjeta |
+| `@` | Mencionar a un miembro del tablero | Al escribir un comentario |
+| `↑` `↓`, `Tab` | Elegir a la persona mencionada | En la lista de menciones |
+| `Esc` | Cancelar la edición en curso | Títulos, columnas, descripciones y comentarios |
 
 ### Datos de demostración
 
