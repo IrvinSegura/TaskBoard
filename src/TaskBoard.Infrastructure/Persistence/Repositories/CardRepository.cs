@@ -24,6 +24,18 @@ internal sealed class CardRepository(ApplicationDbContext db) : ICardRepository
             .Select(c => (double?)c.Position)
             .SingleOrDefaultAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<Card>> GetDueForReminderAsync(
+        DateTimeOffset now, DateTimeOffset until, CancellationToken cancellationToken) =>
+        await db.Cards
+            .Include(c => c.Assignments)
+            .Where(c => !c.IsArchived
+                && c.DueDate > now
+                && c.DueDate <= until
+                && (c.DueReminderSentFor == null || c.DueReminderSentFor != c.DueDate)
+                && c.Assignments.Any()
+                && db.Boards.Any(b => b.Id == c.BoardId && !b.IsArchived))
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyList<Card>> GetColumnCardsAsync(Guid columnId, CancellationToken cancellationToken) =>
         await db.Cards
             .Where(c => c.ColumnId == columnId)
