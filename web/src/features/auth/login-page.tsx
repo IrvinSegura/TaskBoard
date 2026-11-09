@@ -60,7 +60,15 @@ export function LoginPage() {
         <Field label="Email" error={errors.email?.message}>
           <Input type="email" autoComplete="email" placeholder="tu@empresa.com" autoFocus {...register('email')} />
         </Field>
-        <Field label="Contraseña" error={errors.password?.message}>
+        <Field
+          label="Contraseña"
+          error={errors.password?.message}
+          action={
+            <Link to="/forgot-password" className="text-[13px] font-medium text-primary hover:underline">
+              ¿La olvidaste?
+            </Link>
+          }
+        >
           <PasswordInput autoComplete="current-password" placeholder="••••••••" {...register('password')} />
         </Field>
         <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>

@@ -12,6 +12,7 @@ const friendlyMessages: Record<string, string> = {
   'Users.EmailTaken': 'Ese email ya está registrado.',
   'Users.WrongPassword': 'La contraseña actual no es correcta.',
   'Users.NotFoundByEmail': 'No hay ningún usuario registrado con ese email.',
+  'Users.InvalidPasswordResetToken': 'El enlace no es válido, ya venció o ya se usó.',
   'Users.InvalidRefreshToken': 'Tu sesión expiró. Inicia sesión de nuevo.',
   'Teams.NotAllowed': 'Solo los dueños y administradores del equipo pueden gestionar miembros.',
   'Teams.AlreadyMember': 'Esa persona ya es miembro del equipo.',
