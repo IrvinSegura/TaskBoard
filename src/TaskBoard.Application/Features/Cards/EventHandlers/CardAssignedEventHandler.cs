@@ -1,5 +1,6 @@
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Abstractions.Realtime;
+using TaskBoard.Application.Features.Emails;
 using TaskBoard.Application.Features.Notifications;
 using TaskBoard.Domain.Cards.Events;
 using TaskBoard.Domain.Notifications;
@@ -25,6 +26,7 @@ internal sealed class CardAssignedEventHandler(IRealtimeNotifier notifier, Notif
             NotificationType.CardAssigned,
             $"You were assigned to \"{domainEvent.CardTitle}\".",
             domainEvent.CardId,
+            NotificationEmailFacts.Card(domainEvent.BoardId, domainEvent.CardId, domainEvent.CardTitle),
             cancellationToken);
     }
 }

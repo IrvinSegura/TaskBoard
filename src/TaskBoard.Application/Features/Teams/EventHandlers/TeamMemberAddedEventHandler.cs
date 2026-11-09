@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Abstractions.Persistence;
+using TaskBoard.Application.Features.Emails;
 using TaskBoard.Application.Features.Notifications;
 using TaskBoard.Domain.Notifications;
 using TaskBoard.Domain.Teams.Events;
@@ -28,6 +29,7 @@ internal sealed class TeamMemberAddedEventHandler(IReadDbContext db, Notificatio
             NotificationType.AddedToTeam,
             $"You were added to the team \"{teamName}\".",
             domainEvent.TeamId,
+            NotificationEmailFacts.Team(domainEvent.TeamId, teamName),
             cancellationToken);
     }
 }

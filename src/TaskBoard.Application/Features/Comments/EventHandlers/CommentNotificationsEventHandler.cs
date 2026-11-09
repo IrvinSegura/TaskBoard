@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using TaskBoard.Application.Abstractions.Authorization;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Abstractions.Persistence;
+using TaskBoard.Application.Features.Emails;
 using TaskBoard.Application.Features.Notifications;
 using TaskBoard.Domain.Comments;
 using TaskBoard.Domain.Comments.Events;
@@ -48,6 +49,7 @@ internal sealed class CommentNotificationsEventHandler(
                     NotificationType.Mentioned,
                     $"{authorName} mentioned you in \"{card.Title}\".",
                     domainEvent.CardId,
+                    NotificationEmailFacts.Card(domainEvent.BoardId, domainEvent.CardId, card.Title, authorName),
                     cancellationToken);
             }
         }
@@ -59,6 +61,7 @@ internal sealed class CommentNotificationsEventHandler(
                 NotificationType.CommentAdded,
                 $"{authorName} commented on \"{card.Title}\".",
                 domainEvent.CardId,
+                NotificationEmailFacts.Card(domainEvent.BoardId, domainEvent.CardId, card.Title, authorName),
                 cancellationToken);
         }
     }

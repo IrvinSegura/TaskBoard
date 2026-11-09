@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TaskBoard.Application.Abstractions.Messaging;
 using TaskBoard.Application.Abstractions.Persistence;
+using TaskBoard.Application.Features.Emails;
 using TaskBoard.Application.Features.Notifications;
 using TaskBoard.Domain.Boards.Events;
 using TaskBoard.Domain.Notifications;
@@ -22,6 +23,7 @@ internal sealed class BoardMemberAddedEventHandler(IReadDbContext db, Notificati
             NotificationType.AddedToBoard,
             $"You were added to the board \"{boardName}\".",
             domainEvent.BoardId,
+            NotificationEmailFacts.Board(domainEvent.BoardId, boardName),
             cancellationToken);
     }
 }
