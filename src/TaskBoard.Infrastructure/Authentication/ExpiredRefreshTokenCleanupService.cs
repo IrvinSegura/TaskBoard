@@ -8,7 +8,7 @@ using TaskBoard.Infrastructure.Persistence;
 namespace TaskBoard.Infrastructure.Authentication;
 
 /// <summary>
-/// Deletes refresh tokens past their expiry, so every login does not leave a row behind forever.
+/// Deletes refresh and password reset tokens past their expiry, so they do not leave rows behind forever.
 /// </summary>
 // Revoked tokens are kept until they expire: reusing one is how a leaked token is detected.
 // Safe to run on several instances at once: the delete is a single idempotent statement.
@@ -37,7 +37,7 @@ internal sealed class ExpiredRefreshTokenCleanupService(
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                logger.LogError(ex, "Expired refresh token cleanup failed");
+                logger.LogError(ex, "Expired token cleanup failed");
             }
         }
     }
@@ -50,10 +50,11 @@ internal sealed class ExpiredRefreshTokenCleanupService(
         var now = timeProvider.GetUtcNow();
 
         var deleted = await db.RefreshTokens.Where(t => t.ExpiresAt < now).ExecuteDeleteAsync(cancellationToken);
+        deleted += await db.PasswordResetTokens.Where(t => t.ExpiresAt < now).ExecuteDeleteAsync(cancellationToken);
 
         if (deleted > 0)
         {
-            logger.LogInformation("Deleted {Count} expired refresh tokens", deleted);
+            logger.LogInformation("Deleted {Count} expired tokens", deleted);
         }
 
         return deleted;

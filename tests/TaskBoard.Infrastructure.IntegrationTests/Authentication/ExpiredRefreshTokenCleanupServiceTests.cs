@@ -43,5 +43,36 @@ public class ExpiredRefreshTokenCleanupServiceTests(PostgresFixture fixture) : I
         remaining.ShouldBe([active.Id, revoked.Id], ignoreOrder: true);
     }
 
+    [Fact]
+    public async Task RunOnce_DeletesExpiredPasswordResetTokensAndKeepsTheOthers()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var user = User.Create($"{Guid.NewGuid():N}@test.local", "User", "hash");
+        var expired = PasswordResetToken.Create(user.Id, NewHash(), now.AddMinutes(-1));
+        var active = PasswordResetToken.Create(user.Id, NewHash(), now.AddHours(1));
+
+        await using (var db = fixture.CreateDbContext())
+        {
+            db.Users.Add(user);
+            db.PasswordResetTokens.AddRange(expired, active);
+            await db.SaveChangesAsync();
+        }
+
+        var services = new ServiceCollection();
+        services.AddDbContext<ApplicationDbContext>(o => o.UseNpgsql(fixture.ConnectionString));
+        await using var provider = services.BuildServiceProvider();
+        var cleanup = new ExpiredRefreshTokenCleanupService(
+            provider.GetRequiredService<IServiceScopeFactory>(),
+            Options.Create(new JwtOptions()),
+            TimeProvider.System,
+            NullLogger<ExpiredRefreshTokenCleanupService>.Instance);
+
+        await cleanup.RunOnceAsync(CancellationToken.None);
+
+        await using var check = fixture.CreateDbContext();
+        var remaining = await check.PasswordResetTokens.Where(t => t.UserId == user.Id).Select(t => t.Id).ToListAsync();
+        remaining.ShouldBe([active.Id]);
+    }
+
     private static string NewHash() => Guid.NewGuid().ToString("N");
 }
