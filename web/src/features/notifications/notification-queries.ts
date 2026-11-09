@@ -89,7 +89,8 @@ export function useOpenNotification() {
       switch (notification.type) {
         case 'CardAssigned':
         case 'CommentAdded':
-        case 'Mentioned': {
+        case 'Mentioned':
+        case 'CardDueSoon': {
           // The notification only has the card id; the card says which board it is on.
           const card = await cardsApi.get(id)
           navigate(`/boards/${card.boardId}/cards/${card.id}`)
@@ -99,8 +100,10 @@ export function useOpenNotification() {
           navigate(`/boards/${id}`)
           break
         case 'AddedToTeam':
+        case 'TeamRoleChanged':
           navigate(`/teams/${id}`)
           break
+        // Removals carry no resource: the board or team no longer opens for the user.
       }
     } catch (error) {
       toast.error(errorMessage(error))

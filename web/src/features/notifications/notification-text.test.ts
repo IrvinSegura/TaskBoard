@@ -12,6 +12,16 @@ describe('notificationText', () => {
     expect(notificationText('Diego commented on "Push".')).toBe('Diego comentó en «Push».')
   })
 
+  it('translates removals, role changes and due date reminders', () => {
+    expect(notificationText('You were removed from the board "Roadmap".')).toBe('Te quitaron del tablero «Roadmap».')
+    expect(notificationText('You were removed from the team "Producto".')).toBe('Te quitaron del equipo «Producto».')
+    expect(notificationText('Your role in the team "Producto" is now admin.')).toBe(
+      'Ahora eres administrador del equipo «Producto».',
+    )
+    expect(notificationText('Your role in the team "Producto" is now member.')).toBe('Ahora eres miembro del equipo «Producto».')
+    expect(notificationText('"Login screen" is due soon.')).toBe('La tarjeta «Login screen» vence pronto.')
+  })
+
   it('keeps names with quotes inside', () => {
     expect(notificationText('You were assigned to "Fix "quotes" bug".')).toBe('Te asignaron la tarjeta «Fix "quotes" bug».')
   })
