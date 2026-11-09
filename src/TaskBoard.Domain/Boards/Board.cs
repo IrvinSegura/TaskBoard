@@ -94,7 +94,7 @@ public sealed class Board : AggregateRoot
         return Result.Success();
     }
 
-    public Result RemoveMember(Guid userId)
+    public Result RemoveMember(Guid userId, Guid? removedById = null)
     {
         var member = _members.SingleOrDefault(m => m.UserId == userId);
         if (member is null)
@@ -108,7 +108,7 @@ public sealed class Board : AggregateRoot
         }
 
         _members.Remove(member);
-        Raise(new BoardMemberRemovedEvent(Id, userId));
+        Raise(new BoardMemberRemovedEvent(Id, userId, removedById));
         return Result.Success();
     }
 
