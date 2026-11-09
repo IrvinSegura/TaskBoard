@@ -25,6 +25,10 @@ public sealed class Card : AggregateRoot
 
     public DateTimeOffset? DueDate { get; private set; }
 
+    // The due date the assignees were last reminded of, so a reminder goes out once per date: moving the
+    // date makes the card due for a new one.
+    public DateTimeOffset? DueReminderSentFor { get; private set; }
+
     public double Position { get; private set; }
 
     public bool IsArchived { get; private set; }
@@ -73,6 +77,8 @@ public sealed class Card : AggregateRoot
         Raise(new CardUpdatedEvent(Id, BoardId, Title, Description, Priority, DueDate));
         return Result.Success();
     }
+
+    public void MarkDueReminderSent() => DueReminderSentFor = DueDate;
 
     public Result MoveTo(Guid columnId, double position)
     {
