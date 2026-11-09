@@ -20,14 +20,15 @@ Tomadas con los [datos de demostración](#datos-de-demostración).
 
 ## Funcionalidades
 
-- **Autenticación**: registro e inicio de sesión con tokens de acceso JWT de corta duración y refresh tokens rotativos; cierre de sesión, cambio de contraseña, `GET /me` y cambio del nombre visible. Límite de intentos en el login y el registro.
+- **Autenticación**: registro e inicio de sesión con tokens de acceso JWT de corta duración y refresh tokens rotativos; cierre de sesión, cambio y recuperación de contraseña por correo, `GET /me` y cambio del nombre visible. Límite de intentos en el login, el registro y la recuperación.
 - **Equipos**: crear, renombrar y eliminar equipos (solo el dueño elimina), agregar y quitar miembros, cambiar roles y salir de un equipo.
 - **Tableros**: tableros por equipo con miembros, roles y visibilidad; renombrarlos, archivarlos, restaurarlos y eliminarlos (solo si están archivados). Los tableros archivados son de solo lectura.
 - **Columnas y tarjetas**: crear, renombrar, reordenar y eliminar columnas (con sus tarjetas); crear, editar, mover, archivar, restaurar y eliminar tarjetas archivadas, asignar o desasignar miembros, y buscar o filtrar las tarjetas de un tablero.
 - **Vistas del tablero**: además del tablero Kanban, una **Lista** con todas las tarjetas en una tabla (se ordena por columna, prioridad, fecha límite o avance, y usa los mismos filtros) y un **Calendario** con las tarjetas según su fecha límite y las que no tienen fecha. Las tarjetas se abren encima de la vista, y al cerrarlas vuelves a ella.
 - **Etiquetas y checklists**: etiquetas de colores por tablero que se ponen en las tarjetas y sirven de filtro; una checklist por tarjeta, con su avance en el tablero.
 - **Comentarios y adjuntos**: agregar, editar y borrar comentarios; subir, descargar y borrar archivos (disco local o Azure Blob Storage).
-- **Notificaciones**: avisos cuando te asignan una tarjeta, te mencionan con `@`, comentan en una tarjeta tuya o te agregan a un equipo o tablero. Llegan al instante a todas tus pestañas abiertas, con un aviso emergente y el contador de la campana actualizado; se pueden marcar como leídas (una o todas) y eliminar.
+- **Notificaciones**: avisos cuando te asignan una tarjeta, te mencionan con `@`, comentan en una tarjeta tuya, te agregan a un equipo o tablero o te quitan de él, cambian tu rol en un equipo o una tarjeta tuya vence en menos de un día. Llegan al instante a todas tus pestañas abiertas, con un aviso emergente y el contador de la campana actualizado; se pueden marcar como leídas (una o todas) y eliminar.
+- **Correos**: bienvenida al registrarse, con un enlace para confirmar el correo (Mi cuenta permite pedir otro); copia por correo de cada aviso, con un interruptor por tipo en Mi cuenta; y correos de seguridad para recuperar la contraseña y avisar cuando cambia. Se envían en segundo plano por SMTP; mientras no haya un servidor configurado, solo quedan en el log.
 - **Reportes**: métricas de todos tus tableros o de un equipo: tarjetas abiertas, completadas (las de la última columna de cada tablero), vencidas y sin asignar; avance por tablero, tarjetas abiertas por prioridad, carga por persona y vencimientos de los próximos 14 días.
 - **Exportar a PDF y Excel**: los reportes, la lista de un tablero (con sus filtros y su orden) y Mis tareas se descargan como PDF (A4 con portada, tarjetas de resumen, tablas con colores y números de página) o como Excel `.xlsx` (hoja de resumen con enlaces, una hoja por tabla con filtros, fechas y porcentajes con formato, totales con fórmulas y listas para imprimir).
 - **Actividad**: historial de quién creó, movió, editó, comentó o archivó qué, por tarjeta, tablero, equipo y en general.
@@ -179,15 +180,25 @@ Los secretos nunca van en los appsettings. La clave JWT llega por la variable de
 | `Jwt:SigningKey` | Clave simétrica de firma, mínimo 32 caracteres. Solo por variable de entorno (`Jwt__SigningKey`) o user secrets. |
 | `Jwt:AccessTokenLifetime` | Duración del token de acceso (`hh:mm:ss`, 15 minutos por defecto). |
 | `Jwt:RefreshTokenLifetime` | Duración del refresh token (7 días por defecto). |
-| `Jwt:RefreshTokenCleanupInterval` | Cada cuánto se borran los refresh tokens vencidos (1 día por defecto; `00:00:00` lo desactiva). Los revocados se conservan hasta vencer, para detectar su reutilización. |
+| `Jwt:RefreshTokenCleanupInterval` | Cada cuánto se borran los refresh tokens y los enlaces de recuperación vencidos (1 día por defecto; `00:00:00` lo desactiva). Los refresh tokens revocados se conservan hasta vencer, para detectar su reutilización. |
 | `FileStorage:Provider` | `Local` o `AzureBlob`. |
 | `FileStorage:LocalRootPath` | Carpeta de los archivos subidos cuando se usa `Local`. |
 | `FileStorage:AzureConnectionString` | Cadena de conexión de Blob Storage (`UseDevelopmentStorage=true` para Azurite). |
 | `FileStorage:AzureContainerName` | Contenedor de blobs para los adjuntos. |
 | `FileStorage:OrphanCleanupInterval`, `FileStorage:OrphanGracePeriod` | Cada cuánto se borran los archivos sin adjunto, y la antigüedad mínima para borrarlos. Un intervalo de `00:00:00` desactiva la limpieza. |
+| `DueReminders:Interval` | Cada cuánto se buscan tarjetas que vencen en menos de 24 horas para avisar a sus asignados (15 minutos por defecto; `00:00:00` lo desactiva). Cada fecha límite se recuerda una sola vez; pensado para una sola instancia. |
+| `Email:Enabled` | `false` por defecto: los correos solo se registran en el log. En desarrollo el log incluye el texto completo, con el enlace para restablecer la contraseña; en cualquier otro entorno, solo el asunto. |
+| `Email:WebAppUrl` | Dirección del frontend para los enlaces de los correos. Obligatoria con `Email:Enabled`. |
+| `Email:FromAddress`, `Email:FromName` | Remitente de los correos. La dirección es obligatoria con `Email:Enabled`. |
+| `Email:RetryDelay` | Espera antes del primer reintento de envío (5 segundos por defecto). Cada correo se intenta hasta 3 veces. |
+| `Email:Smtp:Host`, `Email:Smtp:Port`, `Email:Smtp:Security` | Servidor SMTP. `Security` es `StartTls` (por defecto), `SslOnConnect`, `Auto` o `None`. El host es obligatorio con `Email:Enabled`. |
+| `Email:Smtp:Username` | Usuario SMTP. Vacío, se envía sin iniciar sesión. |
+| `Email:Smtp:Password` | Contraseña SMTP. Solo por variable de entorno (`Email__Smtp__Password`) o user secrets. |
+| `Email:Smtp:Timeout` | Tiempo máximo de cada operación con el servidor (30 segundos por defecto). |
+| `PasswordReset:TokenLifetime` | Cuánto dura el enlace para restablecer la contraseña (1 hora por defecto). |
 | `Outbox:PollingInterval`, `Outbox:BatchSize` | Ajustes del procesador del outbox. |
 | `Outbox:LockDuration` | Cuánto tiempo queda reservado un lote para una instancia. Debe superar lo que tarda en procesarse. |
-| `RateLimiting:Auth:PermitLimit`, `RateLimiting:Auth:Window` | Intentos por IP permitidos en `/auth/login` y `/auth/register` en cada ventana (10 por minuto por defecto). |
+| `RateLimiting:Auth:PermitLimit`, `RateLimiting:Auth:Window` | Intentos por IP permitidos en `/auth/login`, `/auth/register`, `/auth/forgot-password` y `/auth/reset-password` en cada ventana (10 por minuto por defecto). |
 | `ForwardedHeaders:KnownProxies`, `ForwardedHeaders:KnownNetworks` | IPs (`10.0.0.5`) y redes (`10.0.0.0/8`) de los proxies inversos de confianza. Solo de ellos se acepta `X-Forwarded-For`; vacío, no se confía en ninguno. |
 | `Cors:AllowedOrigins` | Orígenes del frontend que pueden llamar a la API y al hub. |
 
@@ -203,10 +214,16 @@ El refresh token nunca viaja en el JSON: va en la cookie `taskboard-refresh-toke
 | `POST` | `/auth/login` | Devuelve el token de acceso en el body y guarda el refresh token en una cookie. Limitado por IP. |
 | `POST` | `/auth/refresh` | Cambiar el refresh token de la cookie por tokens nuevos. El anterior deja de servir; reutilizarlo cierra todas las sesiones del usuario. |
 | `POST` | `/auth/logout` | Revocar el refresh token de la cookie y borrarla. |
-| `GET` | `/me` | Datos del usuario actual. |
+| `POST` | `/auth/forgot-password` | Enviar por correo un enlace para elegir una contraseña nueva (`email`). Responde igual si la cuenta no existe y, si se pide otra vez en menos de un minuto, no envía otro correo. Limitado por IP. |
+| `POST` | `/auth/reset-password` | Poner una contraseña nueva con el token del correo (`token`, `newPassword`). El token es de un solo uso y vence; revoca todos los refresh tokens del usuario y borra la cookie. Limitado por IP. |
+| `POST` | `/auth/verify-email` | Confirmar el correo con el token del enlace de bienvenida (`token`). El token está firmado y vence a los 7 días. Limitado por IP. |
+| `GET` | `/me` | Datos del usuario actual, incluido si ya confirmó su correo (`emailVerified`). |
+| `POST` | `/me/verification-email` | Enviar otro enlace para confirmar el correo; si ya está confirmado, no envía nada. Limitado por IP. |
 | `PATCH` | `/me` | Cambiar el nombre visible (`displayName`). |
 | `GET` | `/me/cards` | Mis tarjetas asignadas, activas y de tableros no archivados, por fecha límite. |
-| `POST` | `/me/password` | Cambiar la contraseña. Revoca todos los refresh tokens del usuario y borra la cookie, así que hay que volver a iniciar sesión. |
+| `POST` | `/me/password` | Cambiar la contraseña. Revoca todos los refresh tokens del usuario y borra la cookie, así que hay que volver a iniciar sesión. También invalida los enlaces de recuperación pendientes y avisa por correo. |
+| `GET` | `/me/email-preferences` | Los avisos que el usuario no quiere por correo (`mutedTypes`). |
+| `PUT` | `/me/email-preferences` | Reemplazar esa lista (`mutedTypes`: `CardAssigned`, `Mentioned`, `CommentAdded`, `AddedToBoard`, `AddedToTeam`, `RemovedFromBoard`, `RemovedFromTeam`, `TeamRoleChanged`, `CardDueSoon`). |
 | `GET` | `/teams` | Listar mis equipos. |
 | `POST` | `/teams` | Crear un equipo. |
 | `PATCH` | `/teams/{teamId}` | Renombrar un equipo. Solo dueños y admins. |
@@ -299,7 +316,8 @@ Conéctate al hub de SignalR en `/hubs/board`. Los navegadores envían el token 
 
 - **Imagen**: `src/TaskBoard.Api/Dockerfile` (contexto: la raíz del repositorio) tiene dos targets: `api`, la API (puerto 8080, usuario sin privilegios), y `migrations`, un [bundle de migraciones de EF Core](https://learn.microsoft.com/ef/core/managing-schemas/migrations/applying#bundles).
 - **Migraciones**: fuera de `Development` la API no migra al arrancar. Ejecuta la imagen `migrations` una vez por despliegue, antes de la API, con `ConnectionStrings__Database` (o `--connection`). En `docker-compose.yml` es el servicio `migrations`.
-- **Secretos**: pasa `Jwt__SigningKey`, `ConnectionStrings__Database` y, si aplica, `FileStorage__AzureConnectionString` y `ConnectionStrings__Redis` como variables de entorno desde el gestor de secretos de la plataforma.
+- **Secretos**: pasa `Jwt__SigningKey`, `ConnectionStrings__Database` y, si aplica, `FileStorage__AzureConnectionString`, `ConnectionStrings__Redis` y `Email__Smtp__Password` como variables de entorno desde el gestor de secretos de la plataforma.
+- **Correo**: para enviar de verdad, activa `Email:Enabled` y configura `Email:WebAppUrl`, `Email:FromAddress` y `Email:Smtp:*`; si falta alguno, la API no arranca y lo indica. La cola de envío vive en memoria: lo que siga en ella al detener la API se pierde.
 - **Varias instancias**: configura `ConnectionStrings:Redis` y usa Azure Blob Storage (el disco local no se comparte entre instancias). El outbox ya reparte el trabajo entre instancias.
 - **Health checks**: usa `/health/live` como liveness y `/health` como readiness.
 - **Proxy inverso**: el límite de intentos se aplica por IP. Detrás de un proxy, declara sus direcciones en `ForwardedHeaders:KnownProxies` o `ForwardedHeaders:KnownNetworks`; si no, todos los usuarios comparten el límite del proxy.
@@ -309,6 +327,8 @@ Conéctate al hub de SignalR en `/hubs/board`. Los navegadores envían el token 
 ```bash
 dotnet test TaskBoard.slnx
 ```
+
+Las pruebas de `TaskBoard.Application.UnitTests` dejan una vista previa de cada correo, en HTML y en texto, en `bin/Debug/net10.0/email-previews` dentro de ese proyecto. Para ver los correos reales sin enviarlos a nadie, usa [Mailpit](https://mailpit.axllent.org) con `Email__Enabled=true`, `Email__Smtp__Host=localhost`, `Email__Smtp__Port=1025`, `Email__Smtp__Security=None` y `Email__FromAddress=avisos@taskboard.test`.
 
 Las pruebas de integración y funcionales levantan sus propios contenedores de PostgreSQL y aplican las migraciones, así que Docker debe estar corriendo. Las del frontend se ejecutan con `npm test` dentro de `web`. El CI ejecuta toda la suite, revisa el frontend (lint, tipos, pruebas y build) y construye las imágenes Docker en cada push y pull request a `main`.
 
